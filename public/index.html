@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>친구 홀덤</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-title">친구 홀덤</div>
+        <div class="brand-subtitle">Texas Hold'em</div>
+      </div>
+
+      <div class="status-row">
+        <div id="potBox" class="status-chip">팟: 0</div>
+        <div id="turnBox" class="status-chip">현재 턴: -</div>
+        <div id="streetBox" class="status-chip">단계: 대기중</div>
+        <div id="blindBox" class="status-chip">블라인드: 100 / 200</div>
+        <div id="roomInfoBox" class="status-chip">방: -</div>
+      </div>
+    </header>
+
+    <div id="turnBanner" class="turn-banner">현재 턴: -</div>
+
+    <section class="room-panel">
+      <input id="name" placeholder="이름 입력">
+      <input id="roomCodeInput" placeholder="방 코드 입력">
+      <button id="createRoomBtn">방 만들기</button>
+      <button id="joinRoomBtn">방 입장</button>
+      <button id="leaveRoomBtn">방 나가기</button>
+    </section>
+
+    <section class="join-panel">
+      <button id="joinBtn" disabled>입장은 방 만들기/입장으로 대체됨</button>
+    </section>
+
+    <main class="main-layout">
+      <section class="table-section">
+        <div class="table-card">
+          <div class="poker-table">
+            <div id="playersLayer" class="players-layer"></div>
+
+            <div class="table-center">
+              <div class="pot-pill">
+                <div class="pot-pill-label">POT</div>
+                <div id="potCenterValue" class="pot-pill-value">0</div>
+              </div>
+
+              <div class="community-block">
+                <div class="community-title">공용 카드</div>
+                <div class="community-cards">
+                  <div class="card-slot"></div>
+                  <div class="card-slot"></div>
+                  <div class="card-slot"></div>
+                  <div class="card-slot"></div>
+                  <div class="card-slot"></div>
+                </div>
+              </div>
+
+              <div id="resultBox" class="result-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <section class="control-card">
+          <div class="control-title">베팅</div>
+
+          <div class="bet-box">
+            <label for="raiseAmount">레이즈 금액</label>
+            <input id="raiseAmount" type="range" min="200" max="10000" step="100" value="200">
+            <div id="raiseAmountText" class="bet-value">200</div>
+
+            <div class="preset-buttons">
+              <button id="minRaisePresetBtn" type="button">Min</button>
+              <button id="x2PresetBtn" type="button">x2</button>
+              <button id="x3PresetBtn" type="button">x3</button>
+              <button id="potPresetBtn" type="button">Pot</button>
+              <button id="allInPresetBtn" type="button">All-in</button>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="startBtn" class="action-secondary">게임 시작</button>
+            <button id="foldBtn" class="action-danger">Fold</button>
+            <button id="callBtn" class="action-primary">Call</button>
+            <button id="raiseBtn" class="action-primary">Raise</button>
+            <button id="allInBtn" class="action-accent">All-in</button>
+            <button id="showdownBtn" class="action-secondary">승부 보기</button>
+          </div>
+        </section>
+      </section>
+
+      <aside id="logPanel" class="side-card log-panel">
+        <div class="side-card-header">
+          <div>
+            <div class="side-card-title">베팅 로그</div>
+            <div class="side-card-subtitle">핸드 진행 기록</div>
+          </div>
+          <button id="toggleLogPanelBtn" class="ghost-btn" type="button">접기</button>
+        </div>
+
+        <div id="logPanelBody" class="side-card-body">
+          <div id="logBox" class="log-box"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
