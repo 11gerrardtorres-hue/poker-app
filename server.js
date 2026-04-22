@@ -11,7 +11,6 @@ app.use(express.static("public"));
 const STARTING_CHIPS = 10000;
 const SMALL_BLIND = 100;
 const BIG_BLIND = 200;
-const NEXT_HAND_DELAY_MS = 3000;
 
 const rankValues = {
   "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
@@ -38,6 +37,7 @@ function generateRoomCode() {
 function createRoomState(roomCode) {
   return {
     roomCode,
+    hostId: null,
     players: [],
     deck: [],
     community: ["", "", "", "", ""],
@@ -49,7 +49,6 @@ function createRoomState(roomCode) {
     lastWinnerNames: [],
     bettingOpen: false,
     dealerIndex: -1,
-    nextHandTimeout: null,
     lastFullRaiseSize: BIG_BLIND,
     actionLogs: [],
     mustActIds: [],
@@ -65,13 +64,6 @@ function getRoomBySocket(socketId) {
   const roomCode = socketRoomMap.get(socketId);
   if (!roomCode) return null;
   return rooms.get(roomCode) || null;
-}
-
-function clearNextHandTimeout(room) {
-  if (room.nextHandTimeout) {
-    clearTimeout(room.nextHandTimeout);
-    room.nextHandTimeout = null;
-  }
 }
 
 function createDeck() {
@@ -262,6 +254,7 @@ function findStraightHigh(values) {
       run = 1;
     }
   }
+
   return bestHigh;
 }
 
@@ -278,7 +271,6 @@ function getFlushCards(cards) {
       return suits[suit].slice().sort((a, b) => getCardValue(b) - getCardValue(a));
     }
   }
-
   return null;
 }
 
@@ -415,16 +407,6 @@ function finalizeChipChangeTexts(room) {
   });
 }
 
-function scheduleNextHand(room) {
-  clearNextHandTimeout(room);
-  if (!canStartAnotherHand(room)) return;
-
-  room.nextHandTimeout = setTimeout(() => {
-    startHand(room, false);
-    sendState(room);
-  }, NEXT_HAND_DELAY_MS);
-}
-
 function showdown(room) {
   const alive = activePlayers(room);
   room.lastWinnerNames = [];
@@ -455,7 +437,6 @@ function showdown(room) {
     room.canRaiseIds = [];
     room.street = "리버완료";
     finalizeChipChangeTexts(room);
-    scheduleNextHand(room);
     return;
   }
 
@@ -552,7 +533,6 @@ function showdown(room) {
   room.canRaiseIds = [];
   room.street = "리버완료";
   finalizeChipChangeTexts(room);
-  scheduleNextHand(room);
 }
 
 function startStreet(room, firstActorIndex) {
@@ -644,29 +624,65 @@ function postBlinds(room) {
   setCurrentTurnFromMustAct(room);
 }
 
+function revealFlop(room) {
+  room.street = "플랍";
+  room.community[0] = room.deck.pop();
+  room.community[1] = room.deck.pop();
+  room.community[2] = room.deck.pop();
+  startLogStreet(room, "플랍");
+}
+
+function revealTurn(room) {
+  room.street = "턴";
+  room.community[3] = room.deck.pop();
+  startLogStreet(room, "턴");
+}
+
+function revealRiver(room) {
+  room.street = "리버";
+  room.community[4] = room.deck.pop();
+  startLogStreet(room, "리버");
+}
+
+function runOutBoardToShowdown(room) {
+  pushLogEntry(room, "추가 액션 불가 → 자동 쇼다운");
+
+  while (room.street !== "리버완료") {
+    if (room.street === "프리플랍") {
+      revealFlop(room);
+      continue;
+    }
+    if (room.street === "플랍") {
+      revealTurn(room);
+      continue;
+    }
+    if (room.street === "턴") {
+      revealRiver(room);
+      continue;
+    }
+    if (room.street === "리버") {
+      showdown(room);
+      break;
+    }
+    break;
+  }
+}
+
 function advanceStreet(room) {
   if (room.street === "프리플랍") {
-    room.street = "플랍";
-    room.community[0] = room.deck.pop();
-    room.community[1] = room.deck.pop();
-    room.community[2] = room.deck.pop();
-    startLogStreet(room, "플랍");
+    revealFlop(room);
     startStreet(room, getFirstToActPostflop(room));
     return;
   }
 
   if (room.street === "플랍") {
-    room.street = "턴";
-    room.community[3] = room.deck.pop();
-    startLogStreet(room, "턴");
+    revealTurn(room);
     startStreet(room, getFirstToActPostflop(room));
     return;
   }
 
   if (room.street === "턴") {
-    room.street = "리버";
-    room.community[4] = room.deck.pop();
-    startLogStreet(room, "리버");
+    revealRiver(room);
     startStreet(room, getFirstToActPostflop(room));
     return;
   }
@@ -677,16 +693,31 @@ function advanceStreet(room) {
 }
 
 function maybeAdvanceRound(room) {
-  if (room.mustActIds.length === 0) {
-    advanceStreet(room);
-  } else {
-    setCurrentTurnFromMustAct(room);
+  if (activePlayers(room).length === 1) {
+    showdown(room);
+    return;
   }
+
+  // 아직 액션 대기자가 남아 있으면 절대 자동 쇼다운하면 안 됨
+  if (room.mustActIds.length > 0) {
+    setCurrentTurnFromMustAct(room);
+    return;
+  }
+
+  const alive = activePlayers(room);
+  const actionableAlive = alive.filter((p) => p.chips > 0);
+
+  // 모든 대기 액션이 끝난 뒤에만,
+  // 추가 베팅 가능한 사람이 0명 또는 1명뿐이면 남은 보드 자동 공개
+  if (alive.length > 1 && actionableAlive.length <= 1) {
+    runOutBoardToShowdown(room);
+    return;
+  }
+
+  advanceStreet(room);
 }
 
 function startHand(room, resetStacks) {
-  clearNextHandTimeout(room);
-
   if (resetStacks) {
     room.players.forEach((p) => {
       p.chips = STARTING_CHIPS;
@@ -749,15 +780,21 @@ function sendRoomInfo(socket, room) {
     socket.emit("roomInfo", {
       inRoom: false,
       roomCode: "",
-      playerCount: 0
+      playerCount: 0,
+      isHost: false,
+      hostName: ""
     });
     return;
   }
 
+  const host = getPlayerById(room, room.hostId);
+
   socket.emit("roomInfo", {
     inRoom: true,
     roomCode: room.roomCode,
-    playerCount: room.players.length
+    playerCount: room.players.length,
+    isHost: room.hostId === socket.id,
+    hostName: host ? host.name : ""
   });
 }
 
@@ -782,7 +819,9 @@ function sendState(room) {
       result: room.result,
       actionLogs: room.actionLogs,
       winnerNames: room.street === "리버완료" ? room.lastWinnerNames : [],
-      currentTurnName: room.bettingOpen && room.mustActIds.length > 0 ? (getPlayerById(room, room.mustActIds[0])?.name || "-") : "-",
+      currentTurnName: room.bettingOpen && room.mustActIds.length > 0
+        ? (getPlayerById(room, room.mustActIds[0])?.name || "-")
+        : "-",
       myTurn,
       canRaise: myCanRaise,
       myChips: me ? me.chips : 0,
@@ -816,7 +855,6 @@ function cleanupRoomIfEmpty(roomCode) {
   const room = rooms.get(roomCode);
   if (!room) return;
   if (room.players.length === 0) {
-    clearNextHandTimeout(room);
     rooms.delete(roomCode);
   }
 }
@@ -844,6 +882,10 @@ function leaveCurrentRoom(socket) {
     cleanupRoomIfEmpty(roomCode);
     sendRoomInfo(socket, null);
     return;
+  }
+
+  if (room.hostId === socket.id) {
+    room.hostId = room.players[0].id;
   }
 
   if (removedIndex !== -1) {
@@ -884,6 +926,7 @@ io.on("connection", (socket) => {
     }
 
     const room = createRoomState(roomCode);
+    room.hostId = socket.id;
     rooms.set(roomCode, room);
 
     room.players.push({
@@ -950,8 +993,21 @@ io.on("connection", (socket) => {
   socket.on("startGame", () => {
     const room = getRoomBySocket(socket.id);
     if (!room) return;
+    if (room.hostId !== socket.id) return;
     if (room.players.length < 2) return;
+
     startHand(room, true);
+    sendState(room);
+  });
+
+  socket.on("nextHand", () => {
+    const room = getRoomBySocket(socket.id);
+    if (!room) return;
+    if (room.hostId !== socket.id) return;
+    if (room.street !== "리버완료") return;
+    if (!canStartAnotherHand(room)) return;
+
+    startHand(room, false);
     sendState(room);
   });
 
@@ -1108,15 +1164,6 @@ io.on("connection", (socket) => {
     }
 
     maybeAdvanceRound(room);
-    sendState(room);
-  });
-
-  socket.on("showdown", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room) return;
-    if (room.street !== "리버완료") return;
-    if (room.pot <= 0) return;
-    showdown(room);
     sendState(room);
   });
 

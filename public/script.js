@@ -10,12 +10,6 @@ const raiseBtn = document.getElementById("raiseBtn");
 const allInBtn = document.getElementById("allInBtn");
 const showdownBtn = document.getElementById("showdownBtn");
 
-const minRaisePresetBtn = document.getElementById("minRaisePresetBtn");
-const x2PresetBtn = document.getElementById("x2PresetBtn");
-const x3PresetBtn = document.getElementById("x3PresetBtn");
-const potPresetBtn = document.getElementById("potPresetBtn");
-const allInPresetBtn = document.getElementById("allInPresetBtn");
-
 const playersLayer = document.getElementById("playersLayer");
 const resultBox = document.getElementById("resultBox");
 const potBox = document.getElementById("potBox");
@@ -35,9 +29,14 @@ const raiseAmountText = document.getElementById("raiseAmountText");
 
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
-let latestRoomInfo = { inRoom: false, roomCode: "", playerCount: 0 };
+let latestRoomInfo = {
+  inRoom: false,
+  roomCode: "",
+  playerCount: 0,
+  isHost: false,
+  hostName: ""
+};
 let isLogPanelCollapsed = false;
-const collapsedStreetSet = new Set();
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("ko-KR");
@@ -107,6 +106,8 @@ function setRaiseAmount(value) {
   let next = Number(value);
 
   if (!Number.isFinite(next)) next = min;
+  next = Math.round(next / 100) * 100;
+
   if (next < min) next = min;
   if (next > max) next = max;
 
@@ -125,6 +126,8 @@ function updateRaiseUi(state) {
   raiseAmountInput.step = 100;
 
   let currentValue = Number(raiseAmountInput.value || min);
+  currentValue = Math.round(currentValue / 100) * 100;
+
   if (currentValue < min) currentValue = min;
   if (currentValue > max) currentValue = max;
 
@@ -136,9 +139,70 @@ function updateLogPanelUi() {
   toggleLogPanelBtn.textContent = isLogPanelCollapsed ? "펼치기" : "접기";
 }
 
-function toggleStreetCard(cardKey) {
-  if (collapsedStreetSet.has(cardKey)) collapsedStreetSet.delete(cardKey);
-  else collapsedStreetSet.add(cardKey);
+function getActionType(entry) {
+  if (entry.includes("폴드")) return "fold";
+  if (entry.includes("체크")) return "check";
+  if (entry.includes("콜")) return "call";
+  if (entry.includes("레이즈")) return "raise";
+  if (entry.includes("올인")) return "allin";
+  if (entry.includes("SB") || entry.includes("BB")) return "blind";
+  return "system";
+}
+
+function parseLogEntry(entry) {
+  const words = entry.trim().split(/\s+/);
+  if (words.length === 0) {
+    return { type: "system", name: "", action: entry, amount: "" };
+  }
+
+  const type = getActionType(entry);
+
+  if (type === "system") {
+    return { type, name: "", action: entry, amount: "" };
+  }
+
+  const name = words[0] || "";
+  let action = "";
+  let amount = "";
+
+  if (entry.includes("체크")) action = "CHECK";
+  else if (entry.includes("콜")) action = "CALL";
+  else if (entry.includes("레이즈")) action = "RAISE";
+  else if (entry.includes("폴드")) action = "FOLD";
+  else if (entry.includes("올인")) action = "ALL-IN";
+  else if (entry.includes("SB")) action = "SB";
+  else if (entry.includes("BB")) action = "BB";
+
+  const amountMatch = entry.match(/(\d[\d,]*)/g);
+  if (amountMatch && amountMatch.length > 0) {
+    amount = amountMatch[amountMatch.length - 1];
+  }
+
+  return { type, name, action, amount };
+}
+
+function renderLogRow(entry) {
+  const parsed = parseLogEntry(entry);
+
+  if (parsed.type === "system") {
+    return `
+      <div class="log-row">
+        <span class="log-pill system">${entry}</span>
+      </div>
+    `;
+  }
+
+  const amountHtml = parsed.amount
+    ? `<span class="log-pill amount">${parsed.amount}</span>`
+    : "";
+
+  return `
+    <div class="log-row">
+      <span class="log-pill name">${parsed.name}</span>
+      <span class="log-pill ${parsed.type}">${parsed.action}</span>
+      ${amountHtml}
+    </div>
+  `;
 }
 
 function renderLogs(logs) {
@@ -149,41 +213,22 @@ function renderLogs(logs) {
     return;
   }
 
-  const latestIndex = logs.length - 1;
-
-  logs.forEach((group, index) => {
-    const cardKey = `${group.street}-${index}`;
-
-    if (index !== latestIndex && !collapsedStreetSet.has(cardKey) && collapsedStreetSet.size === 0) {
-      collapsedStreetSet.add(cardKey);
-    }
-
-    const isCollapsed = collapsedStreetSet.has(cardKey);
+  logs.forEach((group) => {
     const streetDiv = document.createElement("div");
-    streetDiv.className = `log-street-card ${isCollapsed ? "collapsed" : ""}`;
+    streetDiv.className = "log-street-card";
 
     const entriesHtml = group.entries.length > 0
-      ? group.entries.map((entry) => `<div class="log-entry">${entry}</div>`).join("")
+      ? group.entries.map((entry) => renderLogRow(entry)).join("")
       : `<div class="log-empty">행동 없음</div>`;
 
     streetDiv.innerHTML = `
-      <div class="log-street-header" data-street-key="${cardKey}">
-        <div>
-          <div class="log-street-title">${group.street}</div>
-          <div class="log-street-meta">${group.entries.length}개 로그</div>
-        </div>
-        <button class="log-street-toggle" type="button">${isCollapsed ? "펼치기" : "접기"}</button>
+      <div class="log-street-header">
+        <div class="log-street-title">${group.street}</div>
       </div>
       <div class="log-street-body">
         ${entriesHtml}
       </div>
     `;
-
-    const header = streetDiv.querySelector(".log-street-header");
-    header.onclick = () => {
-      toggleStreetCard(cardKey);
-      renderLogs(logs);
-    };
 
     logBox.appendChild(streetDiv);
   });
@@ -205,7 +250,35 @@ function updateRoomInfo() {
     roomInfoBox.textContent = "방: -";
     return;
   }
-  roomInfoBox.textContent = `방: ${latestRoomInfo.roomCode} (${latestRoomInfo.playerCount}명)`;
+
+  const hostText = latestRoomInfo.hostName ? ` / 방장: ${latestRoomInfo.hostName}` : "";
+  roomInfoBox.textContent = `방: ${latestRoomInfo.roomCode} (${latestRoomInfo.playerCount}명${hostText})`;
+}
+
+function updateBottomButtons(state) {
+  const inRoom = latestRoomInfo.inRoom;
+  const isHost = latestRoomInfo.isHost;
+  const canAct = !!state.myTurn && inRoom;
+  const canRaise = !!state.canRaise && inRoom;
+  const handFinished = state.street === "리버완료";
+
+  startBtn.disabled = !inRoom || !isHost || handFinished;
+  leaveRoomBtn.disabled = !inRoom;
+
+  foldBtn.disabled = !canAct || handFinished;
+  callBtn.disabled = !canAct || handFinished;
+  raiseBtn.disabled = !canRaise || handFinished;
+  allInBtn.disabled = !canAct || handFinished || (state.myChips || 0) <= 0;
+
+  if (handFinished) {
+    showdownBtn.textContent = "다음 게임";
+    showdownBtn.disabled = !inRoom || !isHost;
+  } else {
+    showdownBtn.textContent = "다음 게임";
+    showdownBtn.disabled = true;
+  }
+
+  raiseAmountInput.disabled = !canRaise || handFinished;
 }
 
 function renderState(state) {
@@ -292,28 +365,11 @@ function renderState(state) {
 
   previousCommunity = [...state.community];
 
-  const inRoom = latestRoomInfo.inRoom;
-  const canAct = !!state.myTurn && inRoom;
-  const canRaise = !!state.canRaise && inRoom;
-
-  startBtn.disabled = !inRoom;
-  leaveRoomBtn.disabled = !inRoom;
-
-  foldBtn.disabled = !canAct;
-  callBtn.disabled = !canAct;
-  raiseBtn.disabled = !canRaise;
-  allInBtn.disabled = !canAct || (state.myChips || 0) <= 0;
-  showdownBtn.disabled = state.street !== "리버완료" || !inRoom;
-
-  minRaisePresetBtn.disabled = !canRaise;
-  x2PresetBtn.disabled = !canRaise;
-  x3PresetBtn.disabled = !canRaise;
-  potPresetBtn.disabled = !canRaise;
-  allInPresetBtn.disabled = !canAct || (state.myChips || 0) <= 0;
+  updateBottomButtons(state);
 }
 
 raiseAmountInput.addEventListener("input", () => {
-  raiseAmountText.textContent = formatNumber(raiseAmountInput.value);
+  setRaiseAmount(raiseAmountInput.value);
 });
 
 toggleLogPanelBtn.onclick = () => {
@@ -359,33 +415,12 @@ foldBtn.onclick = () => socket.emit("fold");
 callBtn.onclick = () => socket.emit("call");
 raiseBtn.onclick = () => socket.emit("raise", Number(raiseAmountInput.value));
 allInBtn.onclick = () => socket.emit("allIn");
-showdownBtn.onclick = () => socket.emit("showdown");
 
-minRaisePresetBtn.onclick = () => {
+showdownBtn.onclick = () => {
   if (!latestState) return;
-  setRaiseAmount(latestState.minRaiseAmount || 200);
-};
-
-x2PresetBtn.onclick = () => {
-  if (!latestState) return;
-  const value = Math.max((latestState.currentBet || 0) * 2, latestState.minRaiseAmount || 200);
-  setRaiseAmount(value);
-};
-
-x3PresetBtn.onclick = () => {
-  if (!latestState) return;
-  const value = Math.max((latestState.currentBet || 0) * 3, latestState.minRaiseAmount || 200);
-  setRaiseAmount(value);
-};
-
-potPresetBtn.onclick = () => {
-  if (!latestState) return;
-  setRaiseAmount(latestState.pot || latestState.minRaiseAmount || 200);
-};
-
-allInPresetBtn.onclick = () => {
-  if (!latestState) return;
-  setRaiseAmount(latestState.myChips || latestState.minRaiseAmount || 200);
+  if (latestState.street === "리버완료") {
+    socket.emit("nextHand");
+  }
 };
 
 socket.on("roomInfo", (roomInfo) => {
@@ -401,6 +436,16 @@ socket.on("roomInfo", (roomInfo) => {
     turnBanner.textContent = "현재 턴: -";
     streetBox.textContent = "단계: 대기중";
     logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
+
+    startBtn.disabled = true;
+    leaveRoomBtn.disabled = true;
+    foldBtn.disabled = true;
+    callBtn.disabled = true;
+    raiseBtn.disabled = true;
+    allInBtn.disabled = true;
+    showdownBtn.disabled = true;
+    showdownBtn.textContent = "다음 게임";
+    raiseAmountInput.disabled = true;
   }
 });
 
