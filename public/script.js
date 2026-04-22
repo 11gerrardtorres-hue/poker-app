@@ -57,6 +57,65 @@ function formatCardHtml(card, visible) {
 }
 
 function getSeatPositions(count) {
+  const isPortraitMobile =
+    window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
+
+  if (isPortraitMobile) {
+    const portraitMap = {
+      2: [
+        { left: 50, top: 88 },
+        { left: 50, top: 11 }
+      ],
+      3: [
+        { left: 50, top: 88 },
+        { left: 18, top: 18 },
+        { left: 82, top: 18 }
+      ],
+      4: [
+        { left: 50, top: 88 },
+        { left: 14, top: 38 },
+        { left: 14, top: 12 },
+        { left: 86, top: 12 }
+      ],
+      5: [
+        { left: 50, top: 88 },
+        { left: 14, top: 50 },
+        { left: 14, top: 22 },
+        { left: 50, top: 10 },
+        { left: 86, top: 22 }
+      ],
+      6: [
+        { left: 50, top: 88 },
+        { left: 14, top: 56 },
+        { left: 14, top: 32 },
+        { left: 14, top: 10 },
+        { left: 86, top: 10 },
+        { left: 86, top: 32 }
+      ],
+      7: [
+        { left: 50, top: 88 },
+        { left: 14, top: 58 },
+        { left: 14, top: 38 },
+        { left: 14, top: 18 },
+        { left: 50, top: 8 },
+        { left: 86, top: 18 },
+        { left: 86, top: 38 }
+      ],
+      8: [
+        { left: 50, top: 88 },
+        { left: 14, top: 60 },
+        { left: 14, top: 42 },
+        { left: 14, top: 24 },
+        { left: 32, top: 8 },
+        { left: 68, top: 8 },
+        { left: 86, top: 24 },
+        { left: 86, top: 42 }
+      ]
+    };
+
+    return portraitMap[count] || portraitMap[8];
+  }
+
   const isMobileLandscape =
     window.innerWidth <= 950 && window.innerWidth > window.innerHeight;
   const isTablet = window.innerWidth <= 900 && !isMobileLandscape;
