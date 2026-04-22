@@ -257,7 +257,7 @@ body {
   background: radial-gradient(circle at center, #0e7a4f 0%, #0b5d3d 60%, #08412b 100%);
   border: 8px solid #5b3a1a;
   border-radius: 180px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .players-layer {
@@ -378,7 +378,8 @@ body {
   position: absolute;
   width: 138px;
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .player-card {

@@ -577,9 +577,7 @@ function renderState(state) {
     const lastActionEntry = latestPlayerActions.get(p.name) || "";
     const lastAction = buildLastAction(lastActionEntry, p.name);
 
-    const turnBadgeHtml = p.isCurrentTurn
-      ? `<div class="current-turn-badge">CURRENT TURN</div>`
-      : "";
+    const turnBadgeHtml = "";
 
     const winnerBadgeHtml = winnerNames.includes(p.name)
       ? `<div class="winner-badge">WINNER</div>`
