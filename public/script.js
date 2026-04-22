@@ -240,12 +240,16 @@ function parseLogEntry(entry) {
   return { type, name, action, amount };
 }
 
-function renderLogRow(entry) {
+function renderLogRow(entry, options = {}) {
   const parsed = parseLogEntry(entry);
+  const classes = ["log-row"];
+  if (options.isLatest) classes.push("latest");
+  if (options.isMine) classes.push("mine");
+  if (options.isImportant) classes.push("important");
 
   if (parsed.type === "system") {
     return `
-      <div class="log-row">
+      <div class="${classes.join(" ")}">
         <span class="log-pill system">${entry}</span>
       </div>
     `;
@@ -256,7 +260,7 @@ function renderLogRow(entry) {
     : "";
 
   return `
-    <div class="log-row">
+    <div class="${classes.join(" ")}">
       <span class="log-pill name">${parsed.name}</span>
       <span class="log-pill ${parsed.type}">${parsed.action}</span>
       ${amountHtml}
@@ -272,12 +276,29 @@ function renderLogs(logs) {
     return;
   }
 
+  let globalEntries = [];
+  logs.forEach(group => {
+    group.entries.forEach(entry => {
+      globalEntries.push({ street: group.street, entry });
+    });
+  });
+
+  const latestEntry = globalEntries.length > 0 ? globalEntries[globalEntries.length - 1].entry : "";
+
   logs.forEach((group) => {
     const streetDiv = document.createElement("div");
     streetDiv.className = "log-street-card";
 
     const entriesHtml = group.entries.length > 0
-      ? group.entries.map((entry) => renderLogRow(entry)).join("")
+      ? group.entries.map((entry) => {
+          const parsed = parseLogEntry(entry);
+          const myName = latestState?.players?.find(p => p.isMe)?.name || "";
+          return renderLogRow(entry, {
+            isLatest: entry === latestEntry,
+            isMine: !!myName && parsed.name === myName,
+            isImportant: parsed.type === "raise" || parsed.type === "allin"
+          });
+        }).join("")
       : `<div class="log-empty">행동 없음</div>`;
 
     streetDiv.innerHTML = `
@@ -302,6 +323,12 @@ function updateTurnBanner(state) {
   const turnName = state.currentTurnName || "-";
   turnBox.textContent = `현재 턴: ${turnName}`;
   turnBanner.textContent = `현재 턴: ${turnName}`;
+
+  if (state.myTurn) {
+    turnBanner.classList.add("active");
+  } else {
+    turnBanner.classList.remove("active");
+  }
 }
 
 function updateRoomInfo() {
@@ -340,6 +367,34 @@ function updateBottomButtons(state) {
   raiseAmountInput.disabled = !canRaise || handFinished;
 }
 
+function buildLastAction(entry, playerName) {
+  if (!entry || !playerName) return { text: "", type: "" };
+  if (!entry.startsWith(playerName + " ")) return { text: "", type: "" };
+
+  const parsed = parseLogEntry(entry);
+  if (parsed.type === "system" || parsed.type === "blind") return { text: parsed.action, type: parsed.type };
+
+  return {
+    text: parsed.action,
+    type: parsed.type
+  };
+}
+
+function getLatestPlayerActions(actionLogs) {
+  const map = new Map();
+  if (!actionLogs) return map;
+
+  actionLogs.forEach(group => {
+    group.entries.forEach(entry => {
+      const parsed = parseLogEntry(entry);
+      if (!parsed.name) return;
+      map.set(parsed.name, entry);
+    });
+  });
+
+  return map;
+}
+
 function renderState(state) {
   latestState = state;
   updateRaiseUi(state);
@@ -359,6 +414,7 @@ function renderState(state) {
 
   const positions = getSeatPositions(state.players.length);
   const winnerNames = state.winnerNames || [];
+  const latestPlayerActions = getLatestPlayerActions(state.actionLogs);
 
   state.players.forEach((p, index) => {
     const seat = positions[index];
@@ -387,10 +443,39 @@ function renderState(state) {
       p.chipChangeValue < 0 ? "#fca5a5" :
       "#e5e7eb";
 
+    const lastActionEntry = latestPlayerActions.get(p.name) || "";
+    const lastAction = buildLastAction(lastActionEntry, p.name);
+
+    const turnBadgeHtml = p.isCurrentTurn
+      ? `<div class="current-turn-badge">CURRENT TURN</div>`
+      : "";
+
+    const winnerBadgeHtml = winnerNames.includes(p.name)
+      ? `<div class="winner-badge">WINNER</div>`
+      : "";
+
+    const crownHtml = winnerNames.includes(p.name)
+      ? `<span class="winner-crown">👑</span>`
+      : "";
+
+    const lastActionHtml = lastAction.text
+      ? `<div class="player-last-action ${lastAction.type}">${lastAction.text}</div>`
+      : "";
+
     wrap.innerHTML = `
       <div class="player-card">
-        <div><b>${p.name}${p.isMe ? " (나)" : ""}</b></div>
-        <div>칩: ${formatNumber(p.chips)}</div>
+        <div class="player-name-row">
+          <div class="player-name">${p.name}${p.isMe ? " (나)" : ""}</div>
+          ${crownHtml}
+        </div>
+
+        <div class="player-chip-row">
+          <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
+        </div>
+
+        ${turnBadgeHtml}
+        ${winnerBadgeHtml}
+
         <div class="player-badges">${badges.join("")}</div>
 
         <div class="player-cards">
@@ -398,6 +483,7 @@ function renderState(state) {
           <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[1], p.cardsVisible)}</div>
         </div>
 
+        ${lastActionHtml}
         <div class="player-extra">${roundBetInfo}</div>
         <div class="player-extra">${handInfo}</div>
         <div class="player-extra">${potWinInfo}</div>
