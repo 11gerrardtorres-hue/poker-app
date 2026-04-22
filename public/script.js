@@ -38,6 +38,23 @@ let latestRoomInfo = {
 };
 let isLogPanelCollapsed = false;
 
+let previousStateForFx = null;
+let chipFxLayer = null;
+
+function ensureChipFxLayer() {
+  const table = document.querySelector(".poker-table");
+  if (!table) return null;
+
+  let layer = table.querySelector(".chip-fx-layer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.className = "chip-fx-layer";
+    table.appendChild(layer);
+  }
+  chipFxLayer = layer;
+  return layer;
+}
+
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("ko-KR");
 }
@@ -395,6 +412,120 @@ function getLatestPlayerActions(actionLogs) {
   return map;
 }
 
+function getPlayerSeatCenter(playerName) {
+  const seats = [...document.querySelectorAll(".player-seat")];
+  const target = seats.find(seat => {
+    const nameEl = seat.querySelector(".player-name");
+    return nameEl && nameEl.textContent.startsWith(playerName);
+  });
+
+  if (!target || !chipFxLayer) return null;
+
+  const layerRect = chipFxLayer.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+
+  return {
+    x: rect.left - layerRect.left + rect.width / 2,
+    y: rect.top - layerRect.top + rect.height / 2
+  };
+}
+
+function getPotCenter() {
+  if (!chipFxLayer) return null;
+  const potEl = document.getElementById("potCenterValue");
+  if (!potEl) return null;
+
+  const layerRect = chipFxLayer.getBoundingClientRect();
+  const rect = potEl.getBoundingClientRect();
+
+  return {
+    x: rect.left - layerRect.left + rect.width / 2,
+    y: rect.top - layerRect.top + rect.height / 2
+  };
+}
+
+function spawnChipFlight(from, to, count = 4, options = {}) {
+  const layer = ensureChipFxLayer();
+  if (!layer || !from || !to) return;
+
+  for (let i = 0; i < count; i++) {
+    const chip = document.createElement("div");
+    chip.className = `chip-fx ${options.big ? "big" : ""}`;
+    chip.style.left = `${from.x + (Math.random() * 8 - 4)}px`;
+    chip.style.top = `${from.y + (Math.random() * 8 - 4)}px`;
+
+    const dx = to.x - from.x + (Math.random() * 10 - 5);
+    const dy = to.y - from.y + (Math.random() * 10 - 5);
+
+    chip.style.setProperty("--chip-dx", `${dx}px`);
+    chip.style.setProperty("--chip-dy", `${dy}px`);
+    chip.style.setProperty("--chip-duration", `${options.duration || 520}ms`);
+
+    chip.classList.add("fly");
+    layer.appendChild(chip);
+
+    setTimeout(() => chip.remove(), (options.duration || 520) + 80);
+  }
+}
+
+function runChipAnimations(prevState, nextState) {
+  if (!prevState || !nextState) return;
+  ensureChipFxLayer();
+
+  const prevPot = Number(prevState.pot || 0);
+  const nextPot = Number(nextState.pot || 0);
+
+  // 베팅 칩 이동: 마지막 로그의 액터 -> 팟
+  if (nextPot > prevPot) {
+    const latestGroup = nextState.actionLogs?.[nextState.actionLogs.length - 1];
+    const latestEntry = latestGroup?.entries?.[latestGroup.entries.length - 1] || "";
+    const parsed = parseLogEntry(latestEntry);
+
+    if (parsed.name) {
+      const from = getPlayerSeatCenter(parsed.name);
+      const to = getPotCenter();
+      spawnChipFlight(from, to, parsed.type === "allin" ? 7 : 5, {
+        duration: parsed.type === "allin" ? 620 : 500,
+        big: parsed.type === "allin"
+      });
+    }
+  }
+
+  // 쇼다운 팟 이동: 팟 -> 승자
+  const handFinishedNow =
+    prevState.street !== "리버완료" && nextState.street === "리버완료";
+
+  if (handFinishedNow && Array.isArray(nextState.winnerNames) && nextState.winnerNames.length > 0) {
+    const pot = getPotCenter();
+    nextState.winnerNames.forEach((winnerName, index) => {
+      const to = getPlayerSeatCenter(winnerName);
+      setTimeout(() => {
+        spawnChipFlight(pot, to, 6, { duration: 700, big: true });
+      }, index * 120);
+    });
+  }
+}
+
+function bindButtonPressFx() {
+  const buttons = [
+    createRoomBtn, joinRoomBtn, leaveRoomBtn, startBtn,
+    foldBtn, callBtn, raiseBtn, allInBtn, showdownBtn, toggleLogPanelBtn
+  ].filter(Boolean);
+
+  buttons.forEach(btn => {
+    if (btn.dataset.pressFxBound === "1") return;
+    btn.dataset.pressFxBound = "1";
+
+    const add = () => btn.classList.add("pressed");
+    const remove = () => btn.classList.remove("pressed");
+
+    btn.addEventListener("pointerdown", add);
+    btn.addEventListener("pointerup", remove);
+    btn.addEventListener("pointerleave", remove);
+    btn.addEventListener("pointercancel", remove);
+  });
+}
+
 function renderState(state) {
   latestState = state;
   updateRaiseUi(state);
@@ -511,6 +642,12 @@ function renderState(state) {
   previousCommunity = [...state.community];
 
   updateBottomButtons(state);
+  bindButtonPressFx();
+
+  requestAnimationFrame(() => {
+    runChipAnimations(previousStateForFx, state);
+    previousStateForFx = JSON.parse(JSON.stringify(state));
+  });
 }
 
 raiseAmountInput.addEventListener("input", () => {
