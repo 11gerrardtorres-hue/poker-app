@@ -1520,3 +1520,324 @@ body {
     border-radius: 12px;
   }
 }
+/* =========================================================
+   모바일 세로 전용: 베팅로그 제거 + 한 화면 최대 압축
+   ========================================================= */
+
+/* 1) 베팅로그 완전 숨김 */
+#logPanel {
+  display: none !important;
+}
+
+/* 2) 로그가 사라졌으니 메인 레이아웃 한 칸으로 */
+.main-layout {
+  grid-template-columns: 1fr !important;
+}
+
+/* 3) 모바일 세로 기준 강한 압축 */
+@media (max-width: 900px) and (orientation: portrait) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  .app-shell {
+    width: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 6px;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .topbar {
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .brand-title {
+    font-size: 17px;
+    line-height: 1.1;
+  }
+
+  .brand-subtitle {
+    margin-top: 2px;
+    font-size: 9px;
+  }
+
+  .status-row {
+    gap: 4px;
+  }
+
+  .status-chip {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 24px;
+    border-radius: 999px;
+  }
+
+  .turn-banner {
+    max-width: 100%;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+
+  .room-panel,
+  .join-panel {
+    gap: 5px;
+  }
+
+  .room-panel input,
+  .room-panel button,
+  .join-panel button {
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 11px;
+    min-height: 38px;
+  }
+
+  #settingsPanel {
+    gap: 5px;
+  }
+
+  #settingsPanel input,
+  #settingsPanel button {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-height: 38px;
+  }
+
+  .main-layout {
+    grid-template-columns: 1fr !important;
+    gap: 6px;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .table-section {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .table-card {
+    padding: 6px;
+    min-height: 0;
+  }
+
+  .control-card {
+    margin-top: 0;
+    padding: 8px;
+  }
+
+  .control-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  /* 테이블 전체 높이 줄여서 한 화면에 넣기 */
+  .poker-table {
+    min-height: 520px;
+    height: 100%;
+    border-width: 6px;
+    border-radius: 42px;
+    overflow: hidden;
+  }
+
+  .players-layer {
+    min-height: 520px;
+    height: 100%;
+  }
+
+  /* 중앙 보드도 조금 줄임 */
+  .table-center {
+    width: 220px;
+    max-width: 52%;
+    top: 53%;
+  }
+
+  .pot-pill {
+    width: 98px;
+    padding: 5px 7px;
+    margin-bottom: 6px;
+  }
+
+  .pot-pill-label {
+    font-size: 9px;
+  }
+
+  .pot-pill-value {
+    font-size: 16px;
+  }
+
+  .community-block {
+    padding: 7px;
+    border-radius: 12px;
+  }
+
+  .community-title {
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+
+  .community-cards {
+    gap: 3px;
+  }
+
+  .card-slot {
+    width: 28px;
+    height: 40px;
+    border-radius: 7px;
+  }
+
+  .result-box {
+    margin-top: 5px;
+    min-height: 14px;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  /* 플레이어 박스 압축 */
+  .player-seat {
+    width: 96px !important;
+    z-index: 5;
+  }
+
+  .player-card {
+    padding: 5px 5px 6px !important;
+    border-radius: 10px;
+  }
+
+  .player-name {
+    font-size: 9px !important;
+    line-height: 1.1;
+  }
+
+  .player-chip-row {
+    margin-top: 2px;
+  }
+
+  .player-chip-pill {
+    min-height: 14px;
+    padding: 1px 6px;
+    font-size: 8px !important;
+  }
+
+  .winner-crown {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+
+  .winner-badge,
+  .player-last-action,
+  .current-turn-badge {
+    min-height: 14px;
+    padding: 1px 6px;
+    font-size: 7px !important;
+    margin-top: 4px;
+  }
+
+  .player-badges {
+    gap: 2px;
+    margin-top: 3px;
+    min-height: 12px;
+  }
+
+  .badge {
+    padding: 1px 4px;
+    font-size: 7px;
+  }
+
+  .player-cards {
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  .player-seat .small-card,
+  .player-seat .hidden-card {
+    width: 24px !important;
+    height: 34px !important;
+    border-radius: 6px;
+    font-size: 10px;
+  }
+
+  .player-extra,
+  .player-delta {
+    margin-top: 2px;
+    min-height: 10px;
+    font-size: 8px !important;
+    line-height: 1.15;
+  }
+
+  /* 액션 박스도 압축 */
+  .bet-box {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .bet-box label {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  .bet-value {
+    margin-top: 5px;
+    font-size: 13px;
+  }
+
+  /* 버튼 높이 줄여서 한 화면에 맞춤 */
+  .actions {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .actions button {
+    min-height: 42px !important;
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+    border-radius: 10px !important;
+  }
+
+  /* 쇼다운/핸드 공개 배너도 덜 가리게 더 얇게 */
+  .reveal-modal {
+    top: max(6px, env(safe-area-inset-top)) !important;
+    width: min(96vw, 340px) !important;
+  }
+
+  .reveal-modal-panel {
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .reveal-modal-title {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .reveal-modal-message {
+    font-size: 11px !important;
+    min-height: 16px !important;
+  }
+
+  .reveal-modal-actions {
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  .reveal-primary,
+  .reveal-secondary {
+    min-height: 38px !important;
+    font-size: 11px !important;
+    border-radius: 10px !important;
+  }
+}
