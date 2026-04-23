@@ -2096,3 +2096,135 @@ body {
     width: 190px !important;
   }
 }
+/* ==================================================
+   모바일 세로 리디자인
+   너무 작은 화면 강제 고정 제거
+   보기 좋은 비율 + 자연 스크롤
+   ================================================== */
+@media (max-width: 900px) and (orientation: portrait) {
+
+  html, body {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .app-shell {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+    padding: 8px !important;
+    gap: 8px !important;
+  }
+
+  /* 상단 적당히 */
+  .brand-title {
+    font-size: 18px !important;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .status-chip {
+    font-size: 10px !important;
+    padding: 5px 8px !important;
+  }
+
+  /* 메인 영역 세로 배치 */
+  .main-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .table-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  /* 테이블 크게 복원 */
+  .table-card {
+    padding: 8px !important;
+  }
+
+  .poker-table {
+    min-height: 620px !important;
+    height: 620px !important;
+    border-radius: 44px !important;
+  }
+
+  .players-layer {
+    min-height: 620px !important;
+    height: 620px !important;
+  }
+
+  /* 중앙 카드 크게 */
+  .table-center {
+    width: 250px !important;
+    max-width: 58% !important;
+  }
+
+  .card-slot {
+    width: 32px !important;
+    height: 46px !important;
+  }
+
+  /* 플레이어 박스 다시 보기 좋게 */
+  .player-seat {
+    width: 110px !important;
+  }
+
+  .player-card {
+    padding: 6px !important;
+  }
+
+  .player-name {
+    font-size: 10px !important;
+  }
+
+  .player-chip-pill {
+    font-size: 9px !important;
+  }
+
+  .player-seat .small-card,
+  .player-seat .hidden-card {
+    width: 28px !important;
+    height: 40px !important;
+  }
+
+  .player-extra,
+  .player-delta {
+    font-size: 8px !important;
+  }
+
+  /* 버튼 크게 복원 */
+  .control-card {
+    padding: 10px !important;
+  }
+
+  .actions {
+    grid-template-columns: repeat(3,1fr) !important;
+    gap: 6px !important;
+  }
+
+  .actions button {
+    min-height: 46px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .bet-box {
+    padding: 8px !important;
+  }
+
+  /* 로그는 계속 숨김 */
+  #logPanel {
+    display: none !important;
+  }
+}
