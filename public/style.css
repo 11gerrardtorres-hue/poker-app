@@ -1841,3 +1841,89 @@ body {
     border-radius: 10px !important;
   }
 }
+/* =================================================
+   모바일 세로 버튼 가림 해결 패치
+   ================================================= */
+@media (max-width: 900px) and (orientation: portrait) {
+
+  /* 전체 높이 재조정 */
+  .app-shell {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows:
+      auto   /* topbar */
+      auto   /* turn */
+      auto   /* room */
+      auto   /* settings */
+      1fr    /* table */
+      auto;  /* buttons */
+    gap: 6px;
+  }
+
+  /* 중앙 테이블은 남는 공간만 사용 */
+  .main-layout {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 6px;
+  }
+
+  .table-section {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0,1fr) auto;
+    gap: 6px;
+  }
+
+  /* 테이블 높이를 더 줄임 */
+  .poker-table {
+    min-height: 430px !important;
+    height: 100% !important;
+  }
+
+  .players-layer {
+    min-height: 430px !important;
+  }
+
+  /* 하단 버튼 영역 항상 보이게 */
+  .control-card {
+    padding: 6px !important;
+    margin: 0 !important;
+    position: relative;
+    z-index: 20;
+  }
+
+  /* 버튼 높이 더 축소 */
+  .actions {
+    grid-template-columns: repeat(3,1fr);
+    gap: 4px !important;
+  }
+
+  .actions button {
+    min-height: 38px !important;
+    font-size: 11px !important;
+    padding: 6px 4px !important;
+    border-radius: 10px !important;
+  }
+
+  /* 슬라이더 영역 축소 */
+  .bet-box {
+    padding: 6px !important;
+    margin-bottom: 5px;
+  }
+
+  .bet-box label {
+    font-size: 10px !important;
+  }
+
+  .bet-value {
+    font-size: 12px !important;
+    margin-top: 3px !important;
+  }
+
+  /* 결과창도 얇게 */
+  .result-box {
+    font-size: 10px !important;
+    padding: 2px 4px !important;
+  }
+}
