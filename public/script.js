@@ -77,33 +77,138 @@ function formatCardHtml(card, visible) {
 
 function getSeatPositions(count) {
   const isPortraitMobile =
-    window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
+    window.innerWidth <= 900 &&
+    window.innerHeight > window.innerWidth;
 
+  /* ==================================================
+     모바일 세로 전용 좌석 (안쪽으로 강하게 당김)
+     ================================================== */
   if (isPortraitMobile) {
     const portraitMap = {
-      2: [{ left: 50, top: 88 }, { left: 50, top: 11 }],
-      3: [{ left: 50, top: 88 }, { left: 18, top: 18 }, { left: 82, top: 18 }],
-      4: [{ left: 50, top: 88 }, { left: 14, top: 38 }, { left: 14, top: 12 }, { left: 86, top: 12 }],
-      5: [{ left: 50, top: 88 }, { left: 14, top: 50 }, { left: 14, top: 22 }, { left: 50, top: 10 }, { left: 86, top: 22 }],
-      6: [{ left: 50, top: 88 }, { left: 14, top: 56 }, { left: 14, top: 32 }, { left: 14, top: 10 }, { left: 86, top: 10 }, { left: 86, top: 32 }],
-      7: [{ left: 50, top: 88 }, { left: 14, top: 58 }, { left: 14, top: 38 }, { left: 14, top: 18 }, { left: 50, top: 8 }, { left: 86, top: 18 }, { left: 86, top: 38 }],
-      8: [{ left: 50, top: 88 }, { left: 14, top: 60 }, { left: 14, top: 42 }, { left: 14, top: 24 }, { left: 32, top: 8 }, { left: 68, top: 8 }, { left: 86, top: 24 }, { left: 86, top: 42 }]
+      2: [
+        { left: 50, top: 84 },
+        { left: 50, top: 14 }
+      ],
+
+      3: [
+        { left: 50, top: 84 },
+        { left: 24, top: 18 },
+        { left: 76, top: 18 }
+      ],
+
+      4: [
+        { left: 50, top: 84 },
+        { left: 20, top: 54 },
+        { left: 20, top: 18 },
+        { left: 80, top: 18 }
+      ],
+
+      5: [
+        { left: 50, top: 84 },
+        { left: 18, top: 58 },
+        { left: 18, top: 30 },
+        { left: 50, top: 12 },
+        { left: 82, top: 30 }
+      ],
+
+      6: [
+        { left: 50, top: 84 },
+        { left: 18, top: 62 },
+        { left: 18, top: 40 },
+        { left: 18, top: 18 },
+        { left: 82, top: 18 },
+        { left: 82, top: 40 }
+      ],
+
+      7: [
+        { left: 50, top: 84 },
+        { left: 18, top: 64 },
+        { left: 18, top: 46 },
+        { left: 18, top: 26 },
+        { left: 50, top: 10 },
+        { left: 82, top: 26 },
+        { left: 82, top: 46 }
+      ],
+
+      8: [
+        { left: 50, top: 84 },
+        { left: 18, top: 66 },
+        { left: 18, top: 50 },
+        { left: 18, top: 32 },
+        { left: 28, top: 12 },
+        { left: 72, top: 12 },
+        { left: 82, top: 32 },
+        { left: 82, top: 50 }
+      ]
     };
+
     return portraitMap[count] || portraitMap[8];
   }
 
+  /* ==================================================
+     가로 / 데스크탑
+     ================================================== */
   const desktopMap = {
-    2: [{ left: 50, top: 88 }, { left: 50, top: 14 }],
-    3: [{ left: 50, top: 88 }, { left: 20, top: 20 }, { left: 80, top: 20 }],
-    4: [{ left: 50, top: 88 }, { left: 17, top: 64 }, { left: 17, top: 20 }, { left: 83, top: 20 }],
-    5: [{ left: 50, top: 88 }, { left: 17, top: 69 }, { left: 19, top: 24 }, { left: 50, top: 14 }, { left: 81, top: 24 }],
-    6: [{ left: 50, top: 88 }, { left: 16, top: 70 }, { left: 16, top: 36 }, { left: 33, top: 16 }, { left: 67, top: 16 }, { left: 84, top: 36 }],
-    7: [{ left: 50, top: 88 }, { left: 16, top: 72 }, { left: 15, top: 44 }, { left: 20, top: 20 }, { left: 50, top: 13 }, { left: 80, top: 20 }, { left: 85, top: 44 }],
-    8: [{ left: 50, top: 88 }, { left: 16, top: 74 }, { left: 14, top: 50 }, { left: 17, top: 24 }, { left: 35, top: 14 }, { left: 65, top: 14 }, { left: 83, top: 24 }, { left: 86, top: 50 }]
+    2: [
+      { left: 50, top: 88 },
+      { left: 50, top: 14 }
+    ],
+
+    3: [
+      { left: 50, top: 88 },
+      { left: 20, top: 20 },
+      { left: 80, top: 20 }
+    ],
+
+    4: [
+      { left: 50, top: 88 },
+      { left: 17, top: 64 },
+      { left: 17, top: 20 },
+      { left: 83, top: 20 }
+    ],
+
+    5: [
+      { left: 50, top: 88 },
+      { left: 17, top: 69 },
+      { left: 19, top: 24 },
+      { left: 50, top: 14 },
+      { left: 81, top: 24 }
+    ],
+
+    6: [
+      { left: 50, top: 88 },
+      { left: 16, top: 70 },
+      { left: 16, top: 36 },
+      { left: 33, top: 16 },
+      { left: 67, top: 16 },
+      { left: 84, top: 36 }
+    ],
+
+    7: [
+      { left: 50, top: 88 },
+      { left: 16, top: 72 },
+      { left: 15, top: 44 },
+      { left: 20, top: 20 },
+      { left: 50, top: 13 },
+      { left: 80, top: 20 },
+      { left: 85, top: 44 }
+    ],
+
+    8: [
+      { left: 50, top: 88 },
+      { left: 16, top: 74 },
+      { left: 14, top: 50 },
+      { left: 17, top: 24 },
+      { left: 35, top: 14 },
+      { left: 65, top: 14 },
+      { left: 83, top: 24 },
+      { left: 86, top: 50 }
+    ]
   };
 
   return desktopMap[count] || desktopMap[8];
 }
+  
 
 function setRaiseAmount(value) {
   const min = Number(raiseAmountInput.min);
