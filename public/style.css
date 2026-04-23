@@ -1927,3 +1927,172 @@ body {
     padding: 2px 4px !important;
   }
 }
+/* =====================================================
+   모바일 세로 완전 해결 패치
+   버튼 항상 보이게 / 테이블 자동 축소
+   ===================================================== */
+@media (max-width: 900px) and (orientation: portrait) {
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100dvh;
+  }
+
+  .app-shell {
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    overflow: hidden !important;
+  }
+
+  /* 상단 영역 전부 압축 */
+  .topbar,
+  .room-panel,
+  .join-panel,
+  #settingsPanel,
+  .turn-banner {
+    flex-shrink: 0;
+  }
+
+  .topbar {
+    gap: 4px !important;
+  }
+
+  .brand-title {
+    font-size: 15px !important;
+  }
+
+  .brand-subtitle {
+    display: none !important;
+  }
+
+  .status-chip {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+    min-height: 20px !important;
+  }
+
+  .turn-banner {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+
+  .room-panel input,
+  .room-panel button,
+  #settingsPanel input,
+  #settingsPanel button {
+    min-height: 32px !important;
+    font-size: 10px !important;
+    padding: 6px !important;
+  }
+
+  /* 중앙 게임판 = 남는 공간 전부 */
+  .main-layout {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .table-section {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .table-card {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 4px !important;
+  }
+
+  /* 테이블은 남는 높이만 사용 */
+  .poker-table {
+    height: 100% !important;
+    min-height: 320px !important;
+  }
+
+  .players-layer {
+    height: 100% !important;
+    min-height: 320px !important;
+  }
+
+  /* 하단 버튼 영역 무조건 보이기 */
+  .control-card {
+    flex-shrink: 0 !important;
+    padding: 5px !important;
+    margin: 0 !important;
+  }
+
+  .control-title {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .bet-box {
+    padding: 5px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .bet-box label {
+    font-size: 10px !important;
+  }
+
+  .bet-value {
+    font-size: 11px !important;
+    margin-top: 2px !important;
+  }
+
+  .actions {
+    grid-template-columns: repeat(3,1fr) !important;
+    gap: 4px !important;
+  }
+
+  .actions button {
+    min-height: 34px !important;
+    font-size: 10px !important;
+    padding: 4px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 카드/플레이어 더 줄임 */
+  .player-seat {
+    width: 88px !important;
+  }
+
+  .player-name {
+    font-size: 8px !important;
+  }
+
+  .player-chip-pill,
+  .player-extra,
+  .player-delta {
+    font-size: 7px !important;
+  }
+
+  .player-seat .small-card,
+  .player-seat .hidden-card {
+    width: 22px !important;
+    height: 30px !important;
+  }
+
+  .card-slot {
+    width: 24px !important;
+    height: 34px !important;
+  }
+
+  .table-center {
+    width: 190px !important;
+  }
+}

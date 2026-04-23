@@ -1,7 +1,6 @@
 const socket = io();
 
 const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomBtn = document.getElementById("joinRoomBtn");
 const leaveRoomBtn = document.getElementById("leaveRoomBtn");
 const startBtn = document.getElementById("startBtn");
 const foldBtn = document.getElementById("foldBtn");
