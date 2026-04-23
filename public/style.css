@@ -1406,3 +1406,117 @@ body {
     ) scale(0.92);
   }
 }
+/* ===== 핸드 공개/숨김 상단 배너 ===== */
+.reveal-modal {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  width: min(94vw, 420px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.reveal-modal.hidden {
+  display: none;
+}
+
+.reveal-modal-backdrop {
+  display: none;
+}
+
+.reveal-modal-panel {
+  width: 100%;
+  padding: 14px 14px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.96));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.32);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.reveal-modal-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fde68a;
+  margin-bottom: 6px;
+}
+
+.reveal-modal-message {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+  line-height: 1.4;
+  min-height: 20px;
+}
+
+.reveal-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reveal-modal-actions.hidden {
+  display: none;
+}
+
+.reveal-primary,
+.reveal-secondary {
+  min-height: 44px;
+  border: none;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.reveal-primary {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  color: #1f2937;
+  box-shadow: 0 8px 16px rgba(251, 191, 36, 0.20);
+}
+
+.reveal-secondary {
+  background: rgba(255,255,255,0.08);
+  color: #f3f4f6;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.reveal-waiting {
+  display: none;
+}
+
+.reveal-waiting.hidden {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .reveal-modal {
+    top: max(8px, env(safe-area-inset-top));
+    width: min(96vw, 360px);
+  }
+
+  .reveal-modal-panel {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .reveal-modal-title {
+    font-size: 15px;
+  }
+
+  .reveal-modal-message {
+    font-size: 12px;
+  }
+
+  .reveal-primary,
+  .reveal-secondary {
+    min-height: 42px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+}

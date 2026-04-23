@@ -8,9 +8,9 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-const STARTING_CHIPS = 10000;
-const SMALL_BLIND = 100;
-const BIG_BLIND = 200;
+const DEFAULT_STARTING_CHIPS = 10000;
+const DEFAULT_SMALL_BLIND = 100;
+const DEFAULT_BIG_BLIND = 200;
 
 const rankValues = {
   "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
@@ -28,9 +28,7 @@ const socketRoomMap = new Map();
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
 
@@ -47,17 +45,21 @@ function createRoomState(roomCode) {
     street: "대기중",
     result: "",
     lastWinnerNames: [],
+    lastWinnerIds: [],
     bettingOpen: false,
     dealerIndex: -1,
-    lastFullRaiseSize: BIG_BLIND,
+    lastFullRaiseSize: DEFAULT_BIG_BLIND,
     actionLogs: [],
     mustActIds: [],
-    canRaiseIds: []
+    canRaiseIds: [],
+    hiddenHandPlayerIds: [],
+    revealDecision: null,
+    settings: {
+      startingChips: DEFAULT_STARTING_CHIPS,
+      smallBlind: DEFAULT_SMALL_BLIND,
+      bigBlind: DEFAULT_BIG_BLIND
+    }
   };
-}
-
-function getRoom(roomCode) {
-  return rooms.get(roomCode);
 }
 
 function getRoomBySocket(socketId) {
@@ -70,9 +72,7 @@ function createDeck() {
   const suits = ["♠", "♥", "♦", "♣"];
   const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
   const d = [];
-  for (const s of suits) {
-    for (const r of ranks) d.push(`${r}${s}`);
-  }
+  for (const s of suits) for (const r of ranks) d.push(`${r}${s}`);
   return d;
 }
 
@@ -153,9 +153,7 @@ function getPositionLabel(room, playerIndex) {
   let current = getFirstToActPreflop(room);
 
   for (let i = 0; i < count; i++) {
-    if (current !== room.dealerIndex && current !== sbIndex && current !== bbIndex) {
-      order.push(current);
-    }
+    if (current !== room.dealerIndex && current !== sbIndex && current !== bbIndex) order.push(current);
     current = findNextActiveIndex(room, current);
   }
 
@@ -168,7 +166,6 @@ function getPositionLabel(room, playerIndex) {
   if (count === 6) return ["UTG", "HJ", "CO"][pos] || "";
   if (count === 7) return ["UTG", "LJ", "HJ", "CO"][pos] || "";
   if (count === 8) return ["UTG", "UTG+1", "LJ", "HJ", "CO"][pos] || "";
-
   return "";
 }
 
@@ -387,10 +384,8 @@ function buildSidePots(room) {
 
 function distributeAmountAmongWinners(winners, amount) {
   if (winners.length === 0 || amount <= 0) return;
-
   const baseShare = Math.floor(amount / winners.length);
   const remainder = amount % winners.length;
-
   for (let i = 0; i < winners.length; i++) {
     winners[i].chips += baseShare;
     if (i < remainder) winners[i].chips += 1;
@@ -407,9 +402,63 @@ function finalizeChipChangeTexts(room) {
   });
 }
 
-function showdown(room) {
+function clearRevealDecision(room) {
+  room.revealDecision = null;
+}
+
+function queueRevealDecision(room, playerId, type, message) {
+  const player = getPlayerById(room, playerId);
+  if (!player) return;
+
+  room.revealDecision = {
+    type,
+    playerId,
+    playerName: player.name,
+    message
+  };
+
+  if (!room.hiddenHandPlayerIds.includes(playerId)) {
+    room.hiddenHandPlayerIds.push(playerId);
+  }
+}
+
+function finalizeHandAndMaybeQueueReveal(room, reason) {
+  const alive = activePlayers(room);
+
+  if (reason === "fold_win" && alive.length === 1) {
+    const winner = alive[0];
+    queueRevealDecision(
+      room,
+      winner.id,
+      "fold_win",
+      "상대가 모두 폴드했습니다. 내 핸드를 공개하시겠습니까?"
+    );
+    return;
+  }
+
+  if (
+    reason === "river_showdown" &&
+    alive.length === 2 &&
+    room.lastWinnerIds.length === 1
+  ) {
+    const loser = alive.find((p) => p.id !== room.lastWinnerIds[0]);
+    if (loser) {
+      queueRevealDecision(
+        room,
+        loser.id,
+        "loser_showdown",
+        "패배한 핸드를 공개하시겠습니까?"
+      );
+    }
+  }
+}
+
+function showdown(room, reason = "river_showdown") {
   const alive = activePlayers(room);
   room.lastWinnerNames = [];
+  room.lastWinnerIds = [];
+  room.hiddenHandPlayerIds = [];
+  clearRevealDecision(room);
   resetPotWinTexts(room);
 
   if (alive.length === 0) return;
@@ -427,6 +476,7 @@ function showdown(room) {
   if (alive.length === 1) {
     alive[0].chips += room.pot;
     room.lastWinnerNames = [alive[0].name];
+    room.lastWinnerIds = [alive[0].id];
     alive[0].potWinText = "팟 승리";
     room.result = `${alive[0].name} 승리!`;
     pushLogEntry(room, `${alive[0].name} 승리`);
@@ -437,6 +487,8 @@ function showdown(room) {
     room.canRaiseIds = [];
     room.street = "리버완료";
     finalizeChipChangeTexts(room);
+
+    finalizeHandAndMaybeQueueReveal(room, reason);
     return;
   }
 
@@ -465,6 +517,7 @@ function showdown(room) {
 
     distributeAmountAmongWinners(winners, room.pot);
     room.lastWinnerNames = winners.map((p) => p.name);
+    room.lastWinnerIds = winners.map((p) => p.id);
 
     winners.forEach((winner) => {
       winner.potWinTexts.push(winners.length === 1 ? "팟 승리" : "팟 공동승리");
@@ -510,6 +563,7 @@ function showdown(room) {
 
       winners.forEach((winner) => {
         if (!room.lastWinnerNames.includes(winner.name)) room.lastWinnerNames.push(winner.name);
+        if (!room.lastWinnerIds.includes(winner.id)) room.lastWinnerIds.push(winner.id);
       });
 
       if (winners.length === 1) {
@@ -533,6 +587,8 @@ function showdown(room) {
   room.canRaiseIds = [];
   room.street = "리버완료";
   finalizeChipChangeTexts(room);
+
+  finalizeHandAndMaybeQueueReveal(room, reason);
 }
 
 function startStreet(room, firstActorIndex) {
@@ -542,7 +598,7 @@ function startStreet(room, firstActorIndex) {
   });
 
   room.currentBet = 0;
-  room.lastFullRaiseSize = BIG_BLIND;
+  room.lastFullRaiseSize = room.settings.bigBlind;
   room.bettingOpen = true;
 
   room.mustActIds = orderedActionableIdsFrom(room, firstActorIndex);
@@ -595,8 +651,8 @@ function postBlinds(room) {
   const sbPlayer = room.players[sbIndex];
   const bbPlayer = room.players[bbIndex];
 
-  const sbAmount = Math.min(SMALL_BLIND, sbPlayer.chips);
-  const bbAmount = Math.min(BIG_BLIND, bbPlayer.chips);
+  const sbAmount = Math.min(room.settings.smallBlind, sbPlayer.chips);
+  const bbAmount = Math.min(room.settings.bigBlind, bbPlayer.chips);
 
   sbPlayer.chips -= sbAmount;
   bbPlayer.chips -= bbAmount;
@@ -612,7 +668,7 @@ function postBlinds(room) {
 
   room.pot += sbAmount + bbAmount;
   room.currentBet = bbAmount;
-  room.lastFullRaiseSize = BIG_BLIND;
+  room.lastFullRaiseSize = room.settings.bigBlind;
   room.bettingOpen = true;
 
   pushLogEntry(room, `${sbPlayer.name} SB ${sbAmount}`);
@@ -661,7 +717,7 @@ function runOutBoardToShowdown(room) {
       continue;
     }
     if (room.street === "리버") {
-      showdown(room);
+      showdown(room, "auto_allin_showdown");
       break;
     }
     break;
@@ -688,17 +744,16 @@ function advanceStreet(room) {
   }
 
   if (room.street === "리버") {
-    showdown(room);
+    showdown(room, "river_showdown");
   }
 }
 
 function maybeAdvanceRound(room) {
   if (activePlayers(room).length === 1) {
-    showdown(room);
+    showdown(room, "fold_win");
     return;
   }
 
-  // 아직 액션 대기자가 남아 있으면 절대 자동 쇼다운하면 안 됨
   if (room.mustActIds.length > 0) {
     setCurrentTurnFromMustAct(room);
     return;
@@ -707,8 +762,6 @@ function maybeAdvanceRound(room) {
   const alive = activePlayers(room);
   const actionableAlive = alive.filter((p) => p.chips > 0);
 
-  // 모든 대기 액션이 끝난 뒤에만,
-  // 추가 베팅 가능한 사람이 0명 또는 1명뿐이면 남은 보드 자동 공개
   if (alive.length > 1 && actionableAlive.length <= 1) {
     runOutBoardToShowdown(room);
     return;
@@ -718,15 +771,19 @@ function maybeAdvanceRound(room) {
 }
 
 function startHand(room, resetStacks) {
+  room.hiddenHandPlayerIds = [];
+  clearRevealDecision(room);
+
   if (resetStacks) {
     room.players.forEach((p) => {
-      p.chips = STARTING_CHIPS;
+      p.chips = room.settings.startingChips;
     });
   }
 
   if (!canStartAnotherHand(room)) {
     room.result = "칩이 있는 플레이어가 2명 이상 있어야 시작할 수 있습니다";
     room.lastWinnerNames = [];
+    room.lastWinnerIds = [];
     room.bettingOpen = false;
     room.mustActIds = [];
     room.canRaiseIds = [];
@@ -742,11 +799,12 @@ function startHand(room, resetStacks) {
   room.currentBet = 0;
   room.result = "";
   room.lastWinnerNames = [];
+  room.lastWinnerIds = [];
   room.street = "프리플랍";
   room.bettingOpen = true;
   room.mustActIds = [];
   room.canRaiseIds = [];
-  room.lastFullRaiseSize = BIG_BLIND;
+  room.lastFullRaiseSize = room.settings.bigBlind;
   room.actionLogs = [];
 
   room.dealerIndex = room.dealerIndex === -1 ? 0 : (room.dealerIndex + 1) % room.players.length;
@@ -775,6 +833,86 @@ function getMinRaiseAmount(room, player, canRaise) {
   return Math.min(player.chips, minTarget);
 }
 
+function sanitizeSettings(input, currentSettings) {
+  const start = Number(input?.startingChips);
+  const sb = Number(input?.smallBlind);
+  const bb = Number(input?.bigBlind);
+
+  const startingChips = Number.isFinite(start) ? Math.max(1000, Math.floor(start)) : currentSettings.startingChips;
+  const smallBlind = Number.isFinite(sb) ? Math.max(1, Math.floor(sb)) : currentSettings.smallBlind;
+  const bigBlind = Number.isFinite(bb) ? Math.max(1, Math.floor(bb)) : currentSettings.bigBlind;
+
+  return {
+    startingChips,
+    smallBlind,
+    bigBlind: bigBlind < smallBlind ? smallBlind : bigBlind
+  };
+}
+
+function revealDecisionPayloadForSocket(room, socketId) {
+  if (!room.revealDecision) {
+    return {
+      pending: false,
+      canDecide: false,
+      title: "",
+      message: "",
+      waitingMessage: ""
+    };
+  }
+
+  const canDecide = room.revealDecision.playerId === socketId;
+
+  // 쇼다운 패자 공개 선택은 패자 본인에게만 보임
+  if (room.revealDecision.type === "loser_showdown") {
+    if (!canDecide) {
+      return {
+        pending: false,
+        canDecide: false,
+        title: "",
+        message: "",
+        waitingMessage: ""
+      };
+    }
+
+    return {
+      pending: true,
+      canDecide: true,
+      title: "쇼다운",
+      message: room.revealDecision.message,
+      waitingMessage: ""
+    };
+  }
+
+  // 폴드 승리 후 공개 선택은 승리자 본인에게만 보임
+  if (room.revealDecision.type === "fold_win") {
+    if (!canDecide) {
+      return {
+        pending: false,
+        canDecide: false,
+        title: "",
+        message: "",
+        waitingMessage: ""
+      };
+    }
+
+    return {
+      pending: true,
+      canDecide: true,
+      title: "핸드 공개",
+      message: room.revealDecision.message,
+      waitingMessage: ""
+    };
+  }
+
+  return {
+    pending: false,
+    canDecide: false,
+    title: "",
+    message: "",
+    waitingMessage: ""
+  };
+}
+
 function sendRoomInfo(socket, room) {
   if (!room) {
     socket.emit("roomInfo", {
@@ -782,7 +920,12 @@ function sendRoomInfo(socket, room) {
       roomCode: "",
       playerCount: 0,
       isHost: false,
-      hostName: ""
+      hostName: "",
+      settings: {
+        startingChips: DEFAULT_STARTING_CHIPS,
+        smallBlind: DEFAULT_SMALL_BLIND,
+        bigBlind: DEFAULT_BIG_BLIND
+      }
     });
     return;
   }
@@ -794,7 +937,8 @@ function sendRoomInfo(socket, room) {
     roomCode: room.roomCode,
     playerCount: room.players.length,
     isHost: room.hostId === socket.id,
-    hostName: host ? host.name : ""
+    hostName: host ? host.name : "",
+    settings: room.settings
   });
 }
 
@@ -829,24 +973,33 @@ function sendState(room) {
       myRoundBet: me ? me.roundBet : 0,
       minRaiseAmount: getMinRaiseAmount(room, me, myCanRaise),
       community: room.community,
-      players: room.players.map((p, i) => ({
-        name: p.name,
-        chips: p.chips,
-        folded: p.folded,
-        isCurrentTurn: room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === p.id,
-        isMe: p.id === meId,
-        isDealer: i === room.dealerIndex,
-        isSmallBlind: i === sbIndex,
-        isBigBlind: i === bbIndex,
-        positionLabel: getPositionLabel(room, i),
-        roundBetText: room.street !== "리버완료" && p.roundBet > 0 ? `이번 라운드: ${p.roundBet}` : "",
-        handName: room.street === "리버완료" ? p.lastHandName : "",
-        potWinText: room.street === "리버완료" ? p.potWinText : "",
-        chipChangeValue: room.street === "리버완료" ? p.chipChangeValue : 0,
-        chipChangeText: room.street === "리버완료" ? p.chipChangeText : "",
-        cardsVisible: p.id === meId || room.street === "리버완료",
-        cards: p.id === meId || room.street === "리버완료" ? p.cards : ["🂠", "🂠"]
-      }))
+      settings: room.settings,
+      revealDecision: revealDecisionPayloadForSocket(room, meId),
+      players: room.players.map((p, i) => {
+        const hiddenForOthers = room.hiddenHandPlayerIds.includes(p.id) && p.id !== meId;
+        const visibleAtShowdown = room.street === "리버완료" && !hiddenForOthers;
+        const cardsVisible = p.id === meId || visibleAtShowdown;
+
+        return {
+          id: p.id,
+          name: p.name,
+          chips: p.chips,
+          folded: p.folded,
+          isCurrentTurn: room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === p.id,
+          isMe: p.id === meId,
+          isDealer: i === room.dealerIndex,
+          isSmallBlind: i === sbIndex,
+          isBigBlind: i === bbIndex,
+          positionLabel: getPositionLabel(room, i),
+          roundBetText: room.street !== "리버완료" && p.roundBet > 0 ? `이번 라운드: ${p.roundBet}` : "",
+          handName: visibleAtShowdown || p.id === meId ? p.lastHandName : "",
+          potWinText: room.street === "리버완료" ? p.potWinText : "",
+          chipChangeValue: room.street === "리버완료" ? p.chipChangeValue : 0,
+          chipChangeText: room.street === "리버완료" ? p.chipChangeText : "",
+          cardsVisible,
+          cards: cardsVisible ? p.cards : ["🂠", "🂠"]
+        };
+      })
     });
   });
 }
@@ -854,9 +1007,7 @@ function sendState(room) {
 function cleanupRoomIfEmpty(roomCode) {
   const room = rooms.get(roomCode);
   if (!room) return;
-  if (room.players.length === 0) {
-    rooms.delete(roomCode);
-  }
+  if (room.players.length === 0) rooms.delete(roomCode);
 }
 
 function leaveCurrentRoom(socket) {
@@ -871,6 +1022,12 @@ function leaveCurrentRoom(socket) {
     sendRoomInfo(socket, null);
     return;
   }
+
+  if (room.revealDecision && room.revealDecision.playerId === socket.id) {
+    clearRevealDecision(room);
+  }
+
+  room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== socket.id);
 
   const removedIndex = room.players.findIndex((p) => p.id === socket.id);
 
@@ -889,15 +1046,12 @@ function leaveCurrentRoom(socket) {
   }
 
   if (removedIndex !== -1) {
-    if (room.dealerIndex > removedIndex) {
-      room.dealerIndex -= 1;
-    } else if (room.dealerIndex === removedIndex) {
-      room.dealerIndex = room.dealerIndex % room.players.length;
-    }
+    if (room.dealerIndex > removedIndex) room.dealerIndex -= 1;
+    else if (room.dealerIndex === removedIndex) room.dealerIndex = room.dealerIndex % room.players.length;
   }
 
   if (activePlayers(room).length === 1 && room.pot > 0) {
-    showdown(room);
+    showdown(room, "fold_win");
     sendState(room);
     sendRoomInfo(socket, null);
     return;
@@ -921,9 +1075,7 @@ io.on("connection", (socket) => {
     leaveCurrentRoom(socket);
 
     let roomCode = generateRoomCode();
-    while (rooms.has(roomCode)) {
-      roomCode = generateRoomCode();
-    }
+    while (rooms.has(roomCode)) roomCode = generateRoomCode();
 
     const room = createRoomState(roomCode);
     room.hostId = socket.id;
@@ -932,7 +1084,7 @@ io.on("connection", (socket) => {
     room.players.push({
       id: socket.id,
       name: trimmedName,
-      chips: STARTING_CHIPS,
+      chips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
       roundBet: 0,
@@ -941,7 +1093,7 @@ io.on("connection", (socket) => {
       lastHandName: "",
       potWinTexts: [],
       potWinText: "",
-      startChips: STARTING_CHIPS,
+      startChips: room.settings.startingChips,
       chipChangeValue: 0,
       chipChangeText: ""
     });
@@ -967,7 +1119,7 @@ io.on("connection", (socket) => {
     room.players.push({
       id: socket.id,
       name: trimmedName,
-      chips: STARTING_CHIPS,
+      chips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
       roundBet: 0,
@@ -976,13 +1128,49 @@ io.on("connection", (socket) => {
       lastHandName: "",
       potWinTexts: [],
       potWinText: "",
-      startChips: STARTING_CHIPS,
+      startChips: room.settings.startingChips,
       chipChangeValue: 0,
       chipChangeText: ""
     });
 
     socket.join(normalizedCode);
     socketRoomMap.set(socket.id, normalizedCode);
+    sendState(room);
+  });
+
+  socket.on("updateSettings", (incomingSettings) => {
+    const room = getRoomBySocket(socket.id);
+    if (!room) return;
+    if (room.hostId !== socket.id) return;
+    if (room.revealDecision) return;
+    if (room.street !== "대기중" && room.street !== "리버완료") return;
+
+    room.settings = sanitizeSettings(incomingSettings, room.settings);
+
+    if (room.street === "대기중") {
+      room.players.forEach((p) => {
+        p.chips = room.settings.startingChips;
+        p.startChips = room.settings.startingChips;
+      });
+    }
+
+    sendState(room);
+  });
+
+  socket.on("chooseHandReveal", ({ action }) => {
+    const room = getRoomBySocket(socket.id);
+    if (!room || !room.revealDecision) return;
+    if (room.revealDecision.playerId !== socket.id) return;
+
+    if (action === "reveal") {
+      room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== socket.id);
+    }
+
+    if (action === "hide") {
+      if (!room.hiddenHandPlayerIds.includes(socket.id)) room.hiddenHandPlayerIds.push(socket.id);
+    }
+
+    clearRevealDecision(room);
     sendState(room);
   });
 
@@ -995,6 +1183,7 @@ io.on("connection", (socket) => {
     if (!room) return;
     if (room.hostId !== socket.id) return;
     if (room.players.length < 2) return;
+    if (room.revealDecision) return;
 
     startHand(room, true);
     sendState(room);
@@ -1005,6 +1194,7 @@ io.on("connection", (socket) => {
     if (!room) return;
     if (room.hostId !== socket.id) return;
     if (room.street !== "리버완료") return;
+    if (room.revealDecision) return;
     if (!canStartAnotherHand(room)) return;
 
     startHand(room, false);
@@ -1013,7 +1203,7 @@ io.on("connection", (socket) => {
 
   socket.on("call", () => {
     const room = getRoomBySocket(socket.id);
-    if (!room) return;
+    if (!room || room.revealDecision) return;
     if (!room.bettingOpen || room.mustActIds.length === 0) return;
 
     const actorId = room.mustActIds[0];
@@ -1043,7 +1233,7 @@ io.on("connection", (socket) => {
 
   socket.on("raise", (raiseTargetAmount) => {
     const room = getRoomBySocket(socket.id);
-    if (!room) return;
+    if (!room || room.revealDecision) return;
     if (!room.bettingOpen || room.mustActIds.length === 0) return;
 
     const actorId = room.mustActIds[0];
@@ -1081,7 +1271,7 @@ io.on("connection", (socket) => {
 
   socket.on("allIn", () => {
     const room = getRoomBySocket(socket.id);
-    if (!room) return;
+    if (!room || room.revealDecision) return;
     if (!room.bettingOpen || room.mustActIds.length === 0) return;
 
     const actorId = room.mustActIds[0];
@@ -1129,11 +1319,8 @@ io.on("connection", (socket) => {
         : `${p.name} 올인 ${target} (짧은 올인)`
     );
 
-    if (isFullRaise) {
-      openActionAfterFullRaise(room, actorIndex, p.id, target, raiseSize);
-    } else {
-      openActionAfterShortAllIn(room, actorIndex, p.id, target);
-    }
+    if (isFullRaise) openActionAfterFullRaise(room, actorIndex, p.id, target, raiseSize);
+    else openActionAfterShortAllIn(room, actorIndex, p.id, target);
 
     maybeAdvanceRound(room);
     sendState(room);
@@ -1141,7 +1328,7 @@ io.on("connection", (socket) => {
 
   socket.on("fold", () => {
     const room = getRoomBySocket(socket.id);
-    if (!room) return;
+    if (!room || room.revealDecision) return;
     if (!room.bettingOpen || room.mustActIds.length === 0) return;
 
     const actorId = room.mustActIds[0];
@@ -1158,7 +1345,7 @@ io.on("connection", (socket) => {
     removeFromQueues(room, p.id);
 
     if (activePlayers(room).length === 1) {
-      showdown(room);
+      showdown(room, "fold_win");
       sendState(room);
       return;
     }
@@ -1173,7 +1360,6 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`server running ${PORT}`);
 });

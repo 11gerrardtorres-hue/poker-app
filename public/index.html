@@ -108,6 +108,19 @@
     </main>
   </div>
 
+  <div id="revealDecisionModal" class="reveal-modal hidden">
+    <div class="reveal-modal-backdrop"></div>
+    <div class="reveal-modal-panel">
+      <div id="revealDecisionTitle" class="reveal-modal-title">쇼다운</div>
+      <div id="revealDecisionMessage" class="reveal-modal-message"></div>
+      <div id="revealDecisionButtons" class="reveal-modal-actions">
+        <button id="revealHandBtn" class="reveal-primary">핸드 공개</button>
+        <button id="hideHandBtn" class="reveal-secondary">핸드 숨김</button>
+      </div>
+      <div id="revealDecisionWaiting" class="reveal-waiting hidden"></div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>

@@ -9,6 +9,7 @@ const callBtn = document.getElementById("callBtn");
 const raiseBtn = document.getElementById("raiseBtn");
 const allInBtn = document.getElementById("allInBtn");
 const showdownBtn = document.getElementById("showdownBtn");
+const applySettingsBtn = document.getElementById("applySettingsBtn");
 
 const playersLayer = document.getElementById("playersLayer");
 const resultBox = document.getElementById("resultBox");
@@ -18,6 +19,7 @@ const turnBox = document.getElementById("turnBox");
 const turnBanner = document.getElementById("turnBanner");
 const streetBox = document.getElementById("streetBox");
 const roomInfoBox = document.getElementById("roomInfoBox");
+const blindBox = document.getElementById("blindBox");
 const logBox = document.getElementById("logBox");
 const logPanel = document.getElementById("logPanel");
 const toggleLogPanelBtn = document.getElementById("toggleLogPanelBtn");
@@ -27,6 +29,18 @@ const roomCodeInput = document.getElementById("roomCodeInput");
 const raiseAmountInput = document.getElementById("raiseAmount");
 const raiseAmountText = document.getElementById("raiseAmountText");
 
+const startingChipsInput = document.getElementById("startingChipsInput");
+const smallBlindInput = document.getElementById("smallBlindInput");
+const bigBlindInput = document.getElementById("bigBlindInput");
+
+const revealDecisionModal = document.getElementById("revealDecisionModal");
+const revealDecisionTitle = document.getElementById("revealDecisionTitle");
+const revealDecisionMessage = document.getElementById("revealDecisionMessage");
+const revealDecisionButtons = document.getElementById("revealDecisionButtons");
+const revealDecisionWaiting = document.getElementById("revealDecisionWaiting");
+const revealHandBtn = document.getElementById("revealHandBtn");
+const hideHandBtn = document.getElementById("hideHandBtn");
+
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
 let latestRoomInfo = {
@@ -34,26 +48,14 @@ let latestRoomInfo = {
   roomCode: "",
   playerCount: 0,
   isHost: false,
-  hostName: ""
+  hostName: "",
+  settings: {
+    startingChips: 10000,
+    smallBlind: 100,
+    bigBlind: 200
+  }
 };
 let isLogPanelCollapsed = false;
-
-let previousStateForFx = null;
-let chipFxLayer = null;
-
-function ensureChipFxLayer() {
-  const table = document.querySelector(".poker-table");
-  if (!table) return null;
-
-  let layer = table.querySelector(".chip-fx-layer");
-  if (!layer) {
-    layer = document.createElement("div");
-    layer.className = "chip-fx-layer";
-    table.appendChild(layer);
-  }
-  chipFxLayer = layer;
-  return layer;
-}
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("ko-KR");
@@ -79,63 +81,16 @@ function getSeatPositions(count) {
 
   if (isPortraitMobile) {
     const portraitMap = {
-      2: [
-        { left: 50, top: 88 },
-        { left: 50, top: 11 }
-      ],
-      3: [
-        { left: 50, top: 88 },
-        { left: 18, top: 18 },
-        { left: 82, top: 18 }
-      ],
-      4: [
-        { left: 50, top: 88 },
-        { left: 14, top: 38 },
-        { left: 14, top: 12 },
-        { left: 86, top: 12 }
-      ],
-      5: [
-        { left: 50, top: 88 },
-        { left: 14, top: 50 },
-        { left: 14, top: 22 },
-        { left: 50, top: 10 },
-        { left: 86, top: 22 }
-      ],
-      6: [
-        { left: 50, top: 88 },
-        { left: 14, top: 56 },
-        { left: 14, top: 32 },
-        { left: 14, top: 10 },
-        { left: 86, top: 10 },
-        { left: 86, top: 32 }
-      ],
-      7: [
-        { left: 50, top: 88 },
-        { left: 14, top: 58 },
-        { left: 14, top: 38 },
-        { left: 14, top: 18 },
-        { left: 50, top: 8 },
-        { left: 86, top: 18 },
-        { left: 86, top: 38 }
-      ],
-      8: [
-        { left: 50, top: 88 },
-        { left: 14, top: 60 },
-        { left: 14, top: 42 },
-        { left: 14, top: 24 },
-        { left: 32, top: 8 },
-        { left: 68, top: 8 },
-        { left: 86, top: 24 },
-        { left: 86, top: 42 }
-      ]
+      2: [{ left: 50, top: 88 }, { left: 50, top: 11 }],
+      3: [{ left: 50, top: 88 }, { left: 18, top: 18 }, { left: 82, top: 18 }],
+      4: [{ left: 50, top: 88 }, { left: 14, top: 38 }, { left: 14, top: 12 }, { left: 86, top: 12 }],
+      5: [{ left: 50, top: 88 }, { left: 14, top: 50 }, { left: 14, top: 22 }, { left: 50, top: 10 }, { left: 86, top: 22 }],
+      6: [{ left: 50, top: 88 }, { left: 14, top: 56 }, { left: 14, top: 32 }, { left: 14, top: 10 }, { left: 86, top: 10 }, { left: 86, top: 32 }],
+      7: [{ left: 50, top: 88 }, { left: 14, top: 58 }, { left: 14, top: 38 }, { left: 14, top: 18 }, { left: 50, top: 8 }, { left: 86, top: 18 }, { left: 86, top: 38 }],
+      8: [{ left: 50, top: 88 }, { left: 14, top: 60 }, { left: 14, top: 42 }, { left: 14, top: 24 }, { left: 32, top: 8 }, { left: 68, top: 8 }, { left: 86, top: 24 }, { left: 86, top: 42 }]
     };
-
     return portraitMap[count] || portraitMap[8];
   }
-
-  const isMobileLandscape =
-    window.innerWidth <= 950 && window.innerWidth > window.innerHeight;
-  const isTablet = window.innerWidth <= 900 && !isMobileLandscape;
 
   const desktopMap = {
     2: [{ left: 50, top: 88 }, { left: 50, top: 14 }],
@@ -147,33 +102,7 @@ function getSeatPositions(count) {
     8: [{ left: 50, top: 88 }, { left: 16, top: 74 }, { left: 14, top: 50 }, { left: 17, top: 24 }, { left: 35, top: 14 }, { left: 65, top: 14 }, { left: 83, top: 24 }, { left: 86, top: 50 }]
   };
 
-  const tabletMap = {
-    2: [{ left: 50, top: 89 }, { left: 50, top: 15 }],
-    3: [{ left: 50, top: 89 }, { left: 20, top: 21 }, { left: 80, top: 21 }],
-    4: [{ left: 50, top: 89 }, { left: 17, top: 66 }, { left: 17, top: 21 }, { left: 83, top: 21 }],
-    5: [{ left: 50, top: 89 }, { left: 17, top: 71 }, { left: 19, top: 25 }, { left: 50, top: 15 }, { left: 81, top: 25 }],
-    6: [{ left: 50, top: 89 }, { left: 16, top: 72 }, { left: 16, top: 38 }, { left: 33, top: 17 }, { left: 67, top: 17 }, { left: 84, top: 38 }],
-    7: [{ left: 50, top: 89 }, { left: 16, top: 74 }, { left: 15, top: 46 }, { left: 20, top: 21 }, { left: 50, top: 14 }, { left: 80, top: 21 }, { left: 85, top: 46 }],
-    8: [{ left: 50, top: 89 }, { left: 16, top: 76 }, { left: 14, top: 52 }, { left: 17, top: 25 }, { left: 35, top: 15 }, { left: 65, top: 15 }, { left: 83, top: 25 }, { left: 86, top: 52 }]
-  };
-
-  const mobileLandscapeMap = {
-    2: [{ left: 50, top: 90 }, { left: 50, top: 16 }],
-    3: [{ left: 50, top: 90 }, { left: 21, top: 22 }, { left: 79, top: 22 }],
-    4: [{ left: 50, top: 90 }, { left: 18, top: 67 }, { left: 18, top: 22 }, { left: 82, top: 22 }],
-    5: [{ left: 50, top: 90 }, { left: 18, top: 72 }, { left: 20, top: 27 }, { left: 50, top: 17 }, { left: 80, top: 27 }],
-    6: [{ left: 50, top: 90 }, { left: 17, top: 73 }, { left: 17, top: 40 }, { left: 34, top: 19 }, { left: 66, top: 19 }, { left: 83, top: 40 }],
-    7: [{ left: 50, top: 90 }, { left: 17, top: 75 }, { left: 16, top: 48 }, { left: 21, top: 24 }, { left: 50, top: 16 }, { left: 79, top: 24 }, { left: 84, top: 48 }],
-    8: [{ left: 50, top: 90 }, { left: 17, top: 76 }, { left: 15, top: 54 }, { left: 18, top: 28 }, { left: 35, top: 17 }, { left: 65, top: 17 }, { left: 82, top: 28 }, { left: 85, top: 54 }]
-  };
-
-  const map = isMobileLandscape
-    ? mobileLandscapeMap
-    : isTablet
-      ? tabletMap
-      : desktopMap;
-
-  return map[count] || map[8];
+  return desktopMap[count] || desktopMap[8];
 }
 
 function setRaiseAmount(value) {
@@ -194,7 +123,7 @@ function setRaiseAmount(value) {
 function updateRaiseUi(state) {
   if (!state) return;
 
-  const min = Math.max(state.minRaiseAmount || 200, 200);
+  const min = Math.max(state.minRaiseAmount || state.settings.bigBlind || 200, 200);
   const max = Math.max(state.myChips || min, min);
 
   raiseAmountInput.min = min;
@@ -250,9 +179,7 @@ function parseLogEntry(entry) {
   else if (entry.includes("BB")) action = "BB";
 
   const amountMatch = entry.match(/(\d[\d,]*)/g);
-  if (amountMatch && amountMatch.length > 0) {
-    amount = amountMatch[amountMatch.length - 1];
-  }
+  if (amountMatch && amountMatch.length > 0) amount = amountMatch[amountMatch.length - 1];
 
   return { type, name, action, amount };
 }
@@ -295,9 +222,7 @@ function renderLogs(logs) {
 
   let globalEntries = [];
   logs.forEach(group => {
-    group.entries.forEach(entry => {
-      globalEntries.push({ street: group.street, entry });
-    });
+    group.entries.forEach(entry => globalEntries.push({ street: group.street, entry }));
   });
 
   const latestEntry = globalEntries.length > 0 ? globalEntries[globalEntries.length - 1].entry : "";
@@ -340,32 +265,45 @@ function updateTurnBanner(state) {
   const turnName = state.currentTurnName || "-";
   turnBox.textContent = `현재 턴: ${turnName}`;
   turnBanner.textContent = `현재 턴: ${turnName}`;
-
-  if (state.myTurn) {
-    turnBanner.classList.add("active");
-  } else {
-    turnBanner.classList.remove("active");
-  }
 }
 
 function updateRoomInfo() {
   if (!latestRoomInfo.inRoom) {
     roomInfoBox.textContent = "방: -";
+    blindBox.textContent = `블라인드: ${formatNumber(latestRoomInfo.settings.smallBlind)} / ${formatNumber(latestRoomInfo.settings.bigBlind)}`;
     return;
   }
 
   const hostText = latestRoomInfo.hostName ? ` / 방장: ${latestRoomInfo.hostName}` : "";
   roomInfoBox.textContent = `방: ${latestRoomInfo.roomCode} (${latestRoomInfo.playerCount}명${hostText})`;
+  blindBox.textContent = `블라인드: ${formatNumber(latestRoomInfo.settings.smallBlind)} / ${formatNumber(latestRoomInfo.settings.bigBlind)}`;
+
+  startingChipsInput.value = latestRoomInfo.settings.startingChips;
+  smallBlindInput.value = latestRoomInfo.settings.smallBlind;
+  bigBlindInput.value = latestRoomInfo.settings.bigBlind;
+}
+
+function updateSettingsControls(state) {
+  const inRoom = latestRoomInfo.inRoom;
+  const isHost = latestRoomInfo.isHost;
+  const pendingReveal = !!state.revealDecision?.pending;
+  const canEdit = inRoom && isHost && !pendingReveal && (state.street === "대기중" || state.street === "리버완료");
+
+  startingChipsInput.disabled = !canEdit;
+  smallBlindInput.disabled = !canEdit;
+  bigBlindInput.disabled = !canEdit;
+  applySettingsBtn.disabled = !canEdit;
 }
 
 function updateBottomButtons(state) {
   const inRoom = latestRoomInfo.inRoom;
   const isHost = latestRoomInfo.isHost;
-  const canAct = !!state.myTurn && inRoom;
-  const canRaise = !!state.canRaise && inRoom;
+  const canAct = !!state.myTurn && inRoom && !state.revealDecision?.pending;
+  const canRaise = !!state.canRaise && inRoom && !state.revealDecision?.pending;
   const handFinished = state.street === "리버완료";
+  const pendingReveal = !!state.revealDecision?.pending;
 
-  startBtn.disabled = !inRoom || !isHost || handFinished;
+  startBtn.disabled = !inRoom || !isHost || handFinished || pendingReveal;
   leaveRoomBtn.disabled = !inRoom;
 
   foldBtn.disabled = !canAct || handFinished;
@@ -375,13 +313,14 @@ function updateBottomButtons(state) {
 
   if (handFinished) {
     showdownBtn.textContent = "다음 게임";
-    showdownBtn.disabled = !inRoom || !isHost;
+    showdownBtn.disabled = !inRoom || !isHost || pendingReveal;
   } else {
     showdownBtn.textContent = "다음 게임";
     showdownBtn.disabled = true;
   }
 
   raiseAmountInput.disabled = !canRaise || handFinished;
+  updateSettingsControls(state);
 }
 
 function buildLastAction(entry, playerName) {
@@ -391,10 +330,7 @@ function buildLastAction(entry, playerName) {
   const parsed = parseLogEntry(entry);
   if (parsed.type === "system" || parsed.type === "blind") return { text: parsed.action, type: parsed.type };
 
-  return {
-    text: parsed.action,
-    type: parsed.type
-  };
+  return { text: parsed.action, type: parsed.type };
 }
 
 function getLatestPlayerActions(actionLogs) {
@@ -412,118 +348,21 @@ function getLatestPlayerActions(actionLogs) {
   return map;
 }
 
-function getPlayerSeatCenter(playerName) {
-  const seats = [...document.querySelectorAll(".player-seat")];
-  const target = seats.find(seat => {
-    const nameEl = seat.querySelector(".player-name");
-    return nameEl && nameEl.textContent.startsWith(playerName);
-  });
+function updateRevealModal(state) {
+  const reveal = state.revealDecision;
 
-  if (!target || !chipFxLayer) return null;
-
-  const layerRect = chipFxLayer.getBoundingClientRect();
-  const rect = target.getBoundingClientRect();
-
-  return {
-    x: rect.left - layerRect.left + rect.width / 2,
-    y: rect.top - layerRect.top + rect.height / 2
-  };
-}
-
-function getPotCenter() {
-  if (!chipFxLayer) return null;
-  const potEl = document.getElementById("potCenterValue");
-  if (!potEl) return null;
-
-  const layerRect = chipFxLayer.getBoundingClientRect();
-  const rect = potEl.getBoundingClientRect();
-
-  return {
-    x: rect.left - layerRect.left + rect.width / 2,
-    y: rect.top - layerRect.top + rect.height / 2
-  };
-}
-
-function spawnChipFlight(from, to, count = 4, options = {}) {
-  const layer = ensureChipFxLayer();
-  if (!layer || !from || !to) return;
-
-  for (let i = 0; i < count; i++) {
-    const chip = document.createElement("div");
-    chip.className = `chip-fx ${options.big ? "big" : ""}`;
-    chip.style.left = `${from.x + (Math.random() * 8 - 4)}px`;
-    chip.style.top = `${from.y + (Math.random() * 8 - 4)}px`;
-
-    const dx = to.x - from.x + (Math.random() * 10 - 5);
-    const dy = to.y - from.y + (Math.random() * 10 - 5);
-
-    chip.style.setProperty("--chip-dx", `${dx}px`);
-    chip.style.setProperty("--chip-dy", `${dy}px`);
-    chip.style.setProperty("--chip-duration", `${options.duration || 520}ms`);
-
-    chip.classList.add("fly");
-    layer.appendChild(chip);
-
-    setTimeout(() => chip.remove(), (options.duration || 520) + 80);
-  }
-}
-
-function runChipAnimations(prevState, nextState) {
-  if (!prevState || !nextState) return;
-  ensureChipFxLayer();
-
-  const prevPot = Number(prevState.pot || 0);
-  const nextPot = Number(nextState.pot || 0);
-
-  // 베팅 칩 이동: 마지막 로그의 액터 -> 팟
-  if (nextPot > prevPot) {
-    const latestGroup = nextState.actionLogs?.[nextState.actionLogs.length - 1];
-    const latestEntry = latestGroup?.entries?.[latestGroup.entries.length - 1] || "";
-    const parsed = parseLogEntry(latestEntry);
-
-    if (parsed.name) {
-      const from = getPlayerSeatCenter(parsed.name);
-      const to = getPotCenter();
-      spawnChipFlight(from, to, parsed.type === "allin" ? 7 : 5, {
-        duration: parsed.type === "allin" ? 620 : 500,
-        big: parsed.type === "allin"
-      });
-    }
+  if (!reveal || !reveal.pending || !reveal.canDecide) {
+    revealDecisionModal.classList.add("hidden");
+    return;
   }
 
-  // 쇼다운 팟 이동: 팟 -> 승자
-  const handFinishedNow =
-    prevState.street !== "리버완료" && nextState.street === "리버완료";
+  revealDecisionModal.classList.remove("hidden");
+  revealDecisionTitle.textContent = reveal.title || "쇼다운";
+  revealDecisionMessage.textContent = reveal.message || "";
 
-  if (handFinishedNow && Array.isArray(nextState.winnerNames) && nextState.winnerNames.length > 0) {
-    const pot = getPotCenter();
-    nextState.winnerNames.forEach((winnerName, index) => {
-      const to = getPlayerSeatCenter(winnerName);
-      setTimeout(() => {
-        spawnChipFlight(pot, to, 6, { duration: 700, big: true });
-      }, index * 120);
-    });
-  }
-}
-
-function bindButtonPressFx() {
-  const buttons = [
-    createRoomBtn, joinRoomBtn, leaveRoomBtn, startBtn,
-    foldBtn, callBtn, raiseBtn, allInBtn, showdownBtn, toggleLogPanelBtn
-  ].filter(Boolean);
-
-  buttons.forEach(btn => {
-    if (btn.dataset.pressFxBound === "1") return;
-    btn.dataset.pressFxBound = "1";
-
-    const add = () => btn.classList.add("pressed");
-    const remove = () => btn.classList.remove("pressed");
-
-    btn.addEventListener("pointerdown", add);
-    btn.addEventListener("pointerup", remove);
-    btn.addEventListener("pointerleave", remove);
-    btn.addEventListener("pointercancel", remove);
-  });
+  revealDecisionButtons.classList.remove("hidden");
+  revealDecisionWaiting.classList.add("hidden");
+  revealDecisionWaiting.textContent = "";
 }
 
 function renderState(state) {
@@ -533,6 +372,7 @@ function renderState(state) {
   updateTurnBanner(state);
   updateLogPanelUi();
   updateRoomInfo();
+  updateRevealModal(state);
 
   potBox.textContent = `팟: ${formatNumber(state.pot)}`;
   potCenterValue.textContent = formatNumber(state.pot);
@@ -577,8 +417,6 @@ function renderState(state) {
     const lastActionEntry = latestPlayerActions.get(p.name) || "";
     const lastAction = buildLastAction(lastActionEntry, p.name);
 
-    const turnBadgeHtml = "";
-
     const winnerBadgeHtml = winnerNames.includes(p.name)
       ? `<div class="winner-badge">WINNER</div>`
       : "";
@@ -602,7 +440,6 @@ function renderState(state) {
           <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
         </div>
 
-        ${turnBadgeHtml}
         ${winnerBadgeHtml}
 
         <div class="player-badges">${badges.join("")}</div>
@@ -638,14 +475,7 @@ function renderState(state) {
   });
 
   previousCommunity = [...state.community];
-
   updateBottomButtons(state);
-  bindButtonPressFx();
-
-  requestAnimationFrame(() => {
-    runChipAnimations(previousStateForFx, state);
-    previousStateForFx = JSON.parse(JSON.stringify(state));
-  });
 }
 
 raiseAmountInput.addEventListener("input", () => {
@@ -655,6 +485,35 @@ raiseAmountInput.addEventListener("input", () => {
 toggleLogPanelBtn.onclick = () => {
   isLogPanelCollapsed = !isLogPanelCollapsed;
   updateLogPanelUi();
+};
+
+applySettingsBtn.onclick = () => {
+  const startingChips = Number(startingChipsInput.value);
+  const smallBlind = Number(smallBlindInput.value);
+  const bigBlind = Number(bigBlindInput.value);
+
+  if (!Number.isFinite(startingChips) || startingChips < 1000) {
+    alert("시작칩은 1000 이상이어야 합니다");
+    return;
+  }
+  if (!Number.isFinite(smallBlind) || smallBlind < 1) {
+    alert("SB는 1 이상이어야 합니다");
+    return;
+  }
+  if (!Number.isFinite(bigBlind) || bigBlind < smallBlind) {
+    alert("BB는 SB 이상이어야 합니다");
+    return;
+  }
+
+  socket.emit("updateSettings", { startingChips, smallBlind, bigBlind });
+};
+
+revealHandBtn.onclick = () => {
+  socket.emit("chooseHandReveal", { action: "reveal" });
+};
+
+hideHandBtn.onclick = () => {
+  socket.emit("chooseHandReveal", { action: "hide" });
 };
 
 window.addEventListener("resize", () => {
@@ -698,7 +557,7 @@ allInBtn.onclick = () => socket.emit("allIn");
 
 showdownBtn.onclick = () => {
   if (!latestState) return;
-  if (latestState.street === "리버완료") {
+  if (latestState.street === "리버완료" && !latestState.revealDecision?.pending) {
     socket.emit("nextHand");
   }
 };
@@ -715,7 +574,9 @@ socket.on("roomInfo", (roomInfo) => {
     turnBox.textContent = "현재 턴: -";
     turnBanner.textContent = "현재 턴: -";
     streetBox.textContent = "단계: 대기중";
+    blindBox.textContent = `블라인드: ${formatNumber(roomInfo.settings.smallBlind)} / ${formatNumber(roomInfo.settings.bigBlind)}`;
     logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
+    revealDecisionModal.classList.add("hidden");
 
     startBtn.disabled = true;
     leaveRoomBtn.disabled = true;
@@ -726,6 +587,15 @@ socket.on("roomInfo", (roomInfo) => {
     showdownBtn.disabled = true;
     showdownBtn.textContent = "다음 게임";
     raiseAmountInput.disabled = true;
+
+    startingChipsInput.value = roomInfo.settings.startingChips;
+    smallBlindInput.value = roomInfo.settings.smallBlind;
+    bigBlindInput.value = roomInfo.settings.bigBlind;
+
+    startingChipsInput.disabled = true;
+    smallBlindInput.disabled = true;
+    bigBlindInput.disabled = true;
+    applySettingsBtn.disabled = true;
   }
 });
 
