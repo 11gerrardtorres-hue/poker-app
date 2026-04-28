@@ -1,1365 +1,608 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+const socket = io();
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const createRoomBtn = document.getElementById("createRoomBtn");
+const joinRoomBtn = document.getElementById("joinRoomBtn");
+const leaveRoomBtn = document.getElementById("leaveRoomBtn");
+const startBtn = document.getElementById("startBtn");
+const foldBtn = document.getElementById("foldBtn");
+const callBtn = document.getElementById("callBtn");
+const raiseBtn = document.getElementById("raiseBtn");
+const allInBtn = document.getElementById("allInBtn");
+const showdownBtn = document.getElementById("showdownBtn");
+const applySettingsBtn = document.getElementById("applySettingsBtn");
 
-app.use(express.static("public"));
+const playersLayer = document.getElementById("playersLayer");
+const resultBox = document.getElementById("resultBox");
+const potBox = document.getElementById("potBox");
+const potCenterValue = document.getElementById("potCenterValue");
+const turnBox = document.getElementById("turnBox");
+const turnBanner = document.getElementById("turnBanner");
+const streetBox = document.getElementById("streetBox");
+const roomInfoBox = document.getElementById("roomInfoBox");
+const blindBox = document.getElementById("blindBox");
+const logBox = document.getElementById("logBox");
+const logPanel = document.getElementById("logPanel");
+const toggleLogPanelBtn = document.getElementById("toggleLogPanelBtn");
 
-const DEFAULT_STARTING_CHIPS = 10000;
-const DEFAULT_SMALL_BLIND = 100;
-const DEFAULT_BIG_BLIND = 200;
+const nameInput = document.getElementById("name");
+const roomCodeInput = document.getElementById("roomCodeInput");
+const raiseAmountInput = document.getElementById("raiseAmount");
+const raiseAmountText = document.getElementById("raiseAmountText");
 
-const rankValues = {
-  "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
-  "8": 8, "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14
+const startingChipsInput = document.getElementById("startingChipsInput");
+const smallBlindInput = document.getElementById("smallBlindInput");
+const bigBlindInput = document.getElementById("bigBlindInput");
+
+const revealDecisionModal = document.getElementById("revealDecisionModal");
+const revealDecisionTitle = document.getElementById("revealDecisionTitle");
+const revealDecisionMessage = document.getElementById("revealDecisionMessage");
+const revealDecisionButtons = document.getElementById("revealDecisionButtons");
+const revealDecisionWaiting = document.getElementById("revealDecisionWaiting");
+const revealHandBtn = document.getElementById("revealHandBtn");
+const hideHandBtn = document.getElementById("hideHandBtn");
+
+let previousCommunity = ["", "", "", "", ""];
+let latestState = null;
+let latestRoomInfo = {
+  inRoom: false,
+  roomCode: "",
+  playerCount: 0,
+  isHost: false,
+  hostName: "",
+  settings: {
+    startingChips: 10000,
+    smallBlind: 100,
+    bigBlind: 200
+  }
 };
+let isLogPanelCollapsed = false;
 
-const valueNames = {
-  14: "A", 13: "K", 12: "Q", 11: "J", 10: "10",
-  9: "9", 8: "8", 7: "7", 6: "6", 5: "5", 4: "4", 3: "3", 2: "2"
-};
-
-const rooms = new Map();
-const socketRoomMap = new Map();
-
-function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("ko-KR");
 }
 
-function createRoomState(roomCode) {
-  return {
-    roomCode,
-    hostId: null,
-    players: [],
-    deck: [],
-    community: ["", "", "", "", ""],
-    pot: 0,
-    currentBet: 0,
-    currentTurnIndex: 0,
-    street: "대기중",
-    result: "",
-    lastWinnerNames: [],
-    lastWinnerIds: [],
-    bettingOpen: false,
-    dealerIndex: -1,
-    lastFullRaiseSize: DEFAULT_BIG_BLIND,
-    actionLogs: [],
-    mustActIds: [],
-    canRaiseIds: [],
-    hiddenHandPlayerIds: [],
-    revealDecision: null,
-    settings: {
-      startingChips: DEFAULT_STARTING_CHIPS,
-      smallBlind: DEFAULT_SMALL_BLIND,
-      bigBlind: DEFAULT_BIG_BLIND
-    }
-  };
+function formatCardHtml(card, visible) {
+  if (!visible || card === "🂠") return "🂠";
+
+  const suit = card.slice(-1);
+  const rank = card.slice(0, -1);
+  const isRed = suit === "♥" || suit === "♦";
+
+  return `
+    <span class="card-text ${isRed ? "red" : ""}">
+      <span>${rank}</span><span>${suit}</span>
+    </span>
+  `;
 }
 
-function getRoomBySocket(socketId) {
-  const roomCode = socketRoomMap.get(socketId);
-  if (!roomCode) return null;
-  return rooms.get(roomCode) || null;
-}
+function getSeatPositions(count) {
+  const isPortraitMobile =
+    window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
 
-function createDeck() {
-  const suits = ["♠", "♥", "♦", "♣"];
-  const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
-  const d = [];
-  for (const s of suits) for (const r of ranks) d.push(`${r}${s}`);
-  return d;
-}
-
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-function getPlayerIndexById(room, id) {
-  return room.players.findIndex((p) => p.id === id);
-}
-
-function getPlayerById(room, id) {
-  return room.players.find((p) => p.id === id);
-}
-
-function playersWithChips(room) {
-  return room.players.filter((p) => p.chips > 0);
-}
-
-function canStartAnotherHand(room) {
-  return playersWithChips(room).length >= 2;
-}
-
-function activePlayers(room) {
-  return room.players.filter((p) => !p.folded);
-}
-
-function isActionable(player) {
-  return !!player && !player.folded && player.chips > 0;
-}
-
-function findNextActiveIndex(room, startIndex) {
-  if (room.players.length === 0) return 0;
-  for (let i = 1; i <= room.players.length; i++) {
-    const idx = (startIndex + i) % room.players.length;
-    if (!room.players[idx].folded) return idx;
-  }
-  return startIndex;
-}
-
-function getSmallBlindIndex(room) {
-  if (room.players.length <= 1) return room.dealerIndex;
-  if (room.players.length === 2) return room.dealerIndex;
-  return findNextActiveIndex(room, room.dealerIndex);
-}
-
-function getBigBlindIndex(room) {
-  if (room.players.length <= 1) return room.dealerIndex;
-  if (room.players.length === 2) return findNextActiveIndex(room, room.dealerIndex);
-  return findNextActiveIndex(room, getSmallBlindIndex(room));
-}
-
-function getFirstToActPreflop(room) {
-  if (room.players.length === 2) return room.dealerIndex;
-  return findNextActiveIndex(room, getBigBlindIndex(room));
-}
-
-function getFirstToActPostflop(room) {
-  if (room.players.length === 2) return getBigBlindIndex(room);
-  return findNextActiveIndex(room, room.dealerIndex);
-}
-
-function getPositionLabel(room, playerIndex) {
-  const count = room.players.length;
-  if (count < 2 || room.dealerIndex === -1) return "";
-
-  const sbIndex = getSmallBlindIndex(room);
-  const bbIndex = getBigBlindIndex(room);
-
-  if (playerIndex === room.dealerIndex) return "";
-  if (playerIndex === sbIndex) return "";
-  if (playerIndex === bbIndex) return "";
-
-  const order = [];
-  let current = getFirstToActPreflop(room);
-
-  for (let i = 0; i < count; i++) {
-    if (current !== room.dealerIndex && current !== sbIndex && current !== bbIndex) order.push(current);
-    current = findNextActiveIndex(room, current);
+  if (isPortraitMobile) {
+    const portraitMap = {
+      2: [{ left: 50, top: 88 }, { left: 50, top: 11 }],
+      3: [{ left: 50, top: 88 }, { left: 18, top: 18 }, { left: 82, top: 18 }],
+      4: [{ left: 50, top: 88 }, { left: 14, top: 38 }, { left: 14, top: 12 }, { left: 86, top: 12 }],
+      5: [{ left: 50, top: 88 }, { left: 14, top: 50 }, { left: 14, top: 22 }, { left: 50, top: 10 }, { left: 86, top: 22 }],
+      6: [{ left: 50, top: 88 }, { left: 14, top: 56 }, { left: 14, top: 32 }, { left: 14, top: 10 }, { left: 86, top: 10 }, { left: 86, top: 32 }],
+      7: [{ left: 50, top: 88 }, { left: 14, top: 58 }, { left: 14, top: 38 }, { left: 14, top: 18 }, { left: 50, top: 8 }, { left: 86, top: 18 }, { left: 86, top: 38 }],
+      8: [{ left: 50, top: 88 }, { left: 14, top: 60 }, { left: 14, top: 42 }, { left: 14, top: 24 }, { left: 32, top: 8 }, { left: 68, top: 8 }, { left: 86, top: 24 }, { left: 86, top: 42 }]
+    };
+    return portraitMap[count] || portraitMap[8];
   }
 
-  const pos = order.indexOf(playerIndex);
-  if (pos === -1) return "";
-
-  if (count === 3) return "UTG";
-  if (count === 4) return ["UTG"][pos] || "";
-  if (count === 5) return ["UTG", "CO"][pos] || "";
-  if (count === 6) return ["UTG", "HJ", "CO"][pos] || "";
-  if (count === 7) return ["UTG", "LJ", "HJ", "CO"][pos] || "";
-  if (count === 8) return ["UTG", "UTG+1", "LJ", "HJ", "CO"][pos] || "";
-  return "";
-}
-
-function orderedActionableIdsFrom(room, startIndex, excludeId = null) {
-  const ids = [];
-  for (let offset = 0; offset < room.players.length; offset++) {
-    const idx = (startIndex + offset) % room.players.length;
-    const p = room.players[idx];
-    if (!isActionable(p)) continue;
-    if (excludeId && p.id === excludeId) continue;
-    ids.push(p.id);
-  }
-  return ids;
-}
-
-function removeFromQueues(room, id) {
-  room.mustActIds = room.mustActIds.filter((x) => x !== id);
-  room.canRaiseIds = room.canRaiseIds.filter((x) => x !== id);
-}
-
-function setCurrentTurnFromMustAct(room) {
-  if (!room.bettingOpen || room.mustActIds.length === 0) {
-    room.currentTurnIndex = 0;
-    return;
-  }
-  const idx = getPlayerIndexById(room, room.mustActIds[0]);
-  room.currentTurnIndex = idx === -1 ? 0 : idx;
-}
-
-function startLogStreet(room, streetName) {
-  room.actionLogs.push({ street: streetName, entries: [] });
-}
-
-function pushLogEntry(room, text) {
-  if (room.actionLogs.length === 0) return;
-  room.actionLogs[room.actionLogs.length - 1].entries.push(text);
-}
-
-function resetPotWinTexts(room) {
-  room.players.forEach((p) => {
-    p.potWinTexts = [];
-    p.potWinText = "";
-  });
-}
-
-function getCardRank(card) {
-  return card.slice(0, -1);
-}
-
-function getCardSuit(card) {
-  return card.slice(-1);
-}
-
-function getCardValue(card) {
-  return rankValues[getCardRank(card)];
-}
-
-function countByValue(cards) {
-  const counts = {};
-  cards.forEach((card) => {
-    const value = getCardValue(card);
-    counts[value] = (counts[value] || 0) + 1;
-  });
-  return counts;
-}
-
-function getUniqueSortedValues(cards) {
-  return [...new Set(cards.map(getCardValue))].sort((a, b) => b - a);
-}
-
-function findStraightHigh(values) {
-  const uniqueAsc = [...new Set(values)].sort((a, b) => a - b);
-  if (uniqueAsc.includes(14)) uniqueAsc.unshift(1);
-
-  let run = 1;
-  let bestHigh = 0;
-
-  for (let i = 1; i < uniqueAsc.length; i++) {
-    if (uniqueAsc[i] === uniqueAsc[i - 1] + 1) {
-      run++;
-      if (run >= 5) bestHigh = uniqueAsc[i] === 1 ? 14 : uniqueAsc[i];
-    } else if (uniqueAsc[i] !== uniqueAsc[i - 1]) {
-      run = 1;
-    }
-  }
-
-  return bestHigh;
-}
-
-function getFlushCards(cards) {
-  const suits = {};
-  cards.forEach((card) => {
-    const suit = getCardSuit(card);
-    if (!suits[suit]) suits[suit] = [];
-    suits[suit].push(card);
-  });
-
-  for (const suit in suits) {
-    if (suits[suit].length >= 5) {
-      return suits[suit].slice().sort((a, b) => getCardValue(b) - getCardValue(a));
-    }
-  }
-  return null;
-}
-
-function evaluateSevenCards(cards) {
-  const counts = countByValue(cards);
-  const uniqueValuesDesc = getUniqueSortedValues(cards);
-
-  const valuesByCount = Object.keys(counts)
-    .map((v) => ({ value: Number(v), count: counts[v] }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return b.value - a.value;
-    });
-
-  const flushCards = getFlushCards(cards);
-  const straightHigh = findStraightHigh(cards.map(getCardValue));
-
-  let straightFlushHigh = 0;
-  if (flushCards) straightFlushHigh = findStraightHigh(flushCards.map(getCardValue));
-
-  if (straightFlushHigh) {
-    return { name: "스트레이트 플러쉬", rank: 9, tiebreak: [straightFlushHigh] };
-  }
-
-  const four = valuesByCount.find((x) => x.count === 4);
-  if (four) {
-    const kicker = uniqueValuesDesc.find((v) => v !== four.value) || 0;
-    return { name: "포카드", rank: 8, tiebreak: [four.value, kicker] };
-  }
-
-  const triples = valuesByCount.filter((x) => x.count === 3).map((x) => x.value);
-  const pairs = valuesByCount.filter((x) => x.count === 2).map((x) => x.value);
-
-  if (triples.length >= 1 && (pairs.length >= 1 || triples.length >= 2)) {
-    const topTriple = triples[0];
-    const fullHousePair = triples.length >= 2 ? triples[1] : pairs[0];
-    return { name: "풀하우스", rank: 7, tiebreak: [topTriple, fullHousePair] };
-  }
-
-  if (flushCards) {
-    return { name: "플러쉬", rank: 6, tiebreak: flushCards.slice(0, 5).map(getCardValue) };
-  }
-
-  if (straightHigh) {
-    return { name: "스트레이트", rank: 5, tiebreak: [straightHigh] };
-  }
-
-  if (triples.length >= 1) {
-    const topTriple = triples[0];
-    const kickers = uniqueValuesDesc.filter((v) => v !== topTriple).slice(0, 2);
-    return { name: "트리플", rank: 4, tiebreak: [topTriple, ...kickers] };
-  }
-
-  if (pairs.length >= 2) {
-    const topPair = pairs[0];
-    const secondPair = pairs[1];
-    const kicker = uniqueValuesDesc.find((v) => v !== topPair && v !== secondPair) || 0;
-    return { name: "투페어", rank: 3, tiebreak: [topPair, secondPair, kicker] };
-  }
-
-  if (pairs.length === 1) {
-    const pair = pairs[0];
-    const kickers = uniqueValuesDesc.filter((v) => v !== pair).slice(0, 3);
-    return { name: "원페어", rank: 2, tiebreak: [pair, ...kickers] };
-  }
-
-  return { name: "하이카드", rank: 1, tiebreak: uniqueValuesDesc.slice(0, 5) };
-}
-
-function getHandLabel(evaluation) {
-  if (!evaluation) return "";
-  if (evaluation.name === "하이카드") return `${valueNames[evaluation.tiebreak[0]]}하이`;
-  if (evaluation.name === "원페어") return `원페어(${valueNames[evaluation.tiebreak[0]]})`;
-  if (evaluation.name === "투페어") return `투페어(${valueNames[evaluation.tiebreak[0]]}와 ${valueNames[evaluation.tiebreak[1]]})`;
-  if (evaluation.name === "트리플") return `트리플(${valueNames[evaluation.tiebreak[0]]})`;
-  if (evaluation.name === "스트레이트") return `스트레이트(${valueNames[evaluation.tiebreak[0]]}하이)`;
-  if (evaluation.name === "플러쉬") return `플러쉬(${valueNames[evaluation.tiebreak[0]]}하이)`;
-  if (evaluation.name === "풀하우스") return `풀하우스(${valueNames[evaluation.tiebreak[0]]} 풀 ${valueNames[evaluation.tiebreak[1]]})`;
-  if (evaluation.name === "포카드") return `포카드(${valueNames[evaluation.tiebreak[0]]})`;
-  if (evaluation.name === "스트레이트 플러쉬") return `스트플(${valueNames[evaluation.tiebreak[0]]}하이)`;
-  return evaluation.name;
-}
-
-function compareEvaluations(a, b) {
-  if (a.rank !== b.rank) return a.rank - b.rank;
-  const max = Math.max(a.tiebreak.length, b.tiebreak.length);
-  for (let i = 0; i < max; i++) {
-    const av = a.tiebreak[i] || 0;
-    const bv = b.tiebreak[i] || 0;
-    if (av !== bv) return av - bv;
-  }
-  return 0;
-}
-
-function buildSidePots(room) {
-  const committedValues = room.players.map((p) => p.totalCommitted || 0).filter((v) => v > 0);
-  const uniqueLevels = [...new Set(committedValues)].sort((a, b) => a - b);
-  const pots = [];
-  let prev = 0;
-
-  for (const level of uniqueLevels) {
-    const contributors = room.players.filter((p) => (p.totalCommitted || 0) >= level);
-    const amount = (level - prev) * contributors.length;
-    const eligibleIds = activePlayers(room)
-      .filter((p) => (p.totalCommitted || 0) >= level)
-      .map((p) => p.id);
-
-    if (amount > 0) pots.push({ amount, eligibleIds });
-    prev = level;
-  }
-
-  return pots;
-}
-
-function distributeAmountAmongWinners(winners, amount) {
-  if (winners.length === 0 || amount <= 0) return;
-  const baseShare = Math.floor(amount / winners.length);
-  const remainder = amount % winners.length;
-  for (let i = 0; i < winners.length; i++) {
-    winners[i].chips += baseShare;
-    if (i < remainder) winners[i].chips += 1;
-  }
-}
-
-function finalizeChipChangeTexts(room) {
-  room.players.forEach((p) => {
-    const diff = p.chips - p.startChips;
-    p.chipChangeValue = diff;
-    if (diff > 0) p.chipChangeText = `+${diff}`;
-    else if (diff < 0) p.chipChangeText = `${diff}`;
-    else p.chipChangeText = "±0";
-  });
-}
-
-function clearRevealDecision(room) {
-  room.revealDecision = null;
-}
-
-function queueRevealDecision(room, playerId, type, message) {
-  const player = getPlayerById(room, playerId);
-  if (!player) return;
-
-  room.revealDecision = {
-    type,
-    playerId,
-    playerName: player.name,
-    message
+  const desktopMap = {
+    2: [{ left: 50, top: 88 }, { left: 50, top: 14 }],
+    3: [{ left: 50, top: 88 }, { left: 20, top: 20 }, { left: 80, top: 20 }],
+    4: [{ left: 50, top: 88 }, { left: 17, top: 64 }, { left: 17, top: 20 }, { left: 83, top: 20 }],
+    5: [{ left: 50, top: 88 }, { left: 17, top: 69 }, { left: 19, top: 24 }, { left: 50, top: 14 }, { left: 81, top: 24 }],
+    6: [{ left: 50, top: 88 }, { left: 16, top: 70 }, { left: 16, top: 36 }, { left: 33, top: 16 }, { left: 67, top: 16 }, { left: 84, top: 36 }],
+    7: [{ left: 50, top: 88 }, { left: 16, top: 72 }, { left: 15, top: 44 }, { left: 20, top: 20 }, { left: 50, top: 13 }, { left: 80, top: 20 }, { left: 85, top: 44 }],
+    8: [{ left: 50, top: 88 }, { left: 16, top: 74 }, { left: 14, top: 50 }, { left: 17, top: 24 }, { left: 35, top: 14 }, { left: 65, top: 14 }, { left: 83, top: 24 }, { left: 86, top: 50 }]
   };
 
-  if (!room.hiddenHandPlayerIds.includes(playerId)) {
-    room.hiddenHandPlayerIds.push(playerId);
-  }
+  return desktopMap[count] || desktopMap[8];
 }
 
-function finalizeHandAndMaybeQueueReveal(room, reason) {
-  const alive = activePlayers(room);
+function setRaiseAmount(value) {
+  const min = Number(raiseAmountInput.min);
+  const max = Number(raiseAmountInput.max);
+  let next = Number(value);
 
-  if (reason === "fold_win" && alive.length === 1) {
-    const winner = alive[0];
-    queueRevealDecision(
-      room,
-      winner.id,
-      "fold_win",
-      "상대가 모두 폴드했습니다. 내 핸드를 공개하시겠습니까?"
-    );
+  if (!Number.isFinite(next)) next = min;
+  next = Math.round(next / 100) * 100;
+
+  if (next < min) next = min;
+  if (next > max) next = max;
+
+  raiseAmountInput.value = next;
+  raiseAmountText.textContent = formatNumber(next);
+}
+
+function updateRaiseUi(state) {
+  if (!state) return;
+
+  const min = Math.max(state.minRaiseAmount || state.settings.bigBlind || 200, 200);
+  const max = Math.max(state.myChips || min, min);
+
+  raiseAmountInput.min = min;
+  raiseAmountInput.max = max;
+  raiseAmountInput.step = 100;
+
+  let currentValue = Number(raiseAmountInput.value || min);
+  currentValue = Math.round(currentValue / 100) * 100;
+
+  if (currentValue < min) currentValue = min;
+  if (currentValue > max) currentValue = max;
+
+  setRaiseAmount(currentValue);
+}
+
+function updateLogPanelUi() {
+  logPanel.classList.toggle("collapsed", isLogPanelCollapsed);
+  toggleLogPanelBtn.textContent = isLogPanelCollapsed ? "펼치기" : "접기";
+}
+
+function getActionType(entry) {
+  if (entry.includes("폴드")) return "fold";
+  if (entry.includes("체크")) return "check";
+  if (entry.includes("콜")) return "call";
+  if (entry.includes("레이즈")) return "raise";
+  if (entry.includes("올인")) return "allin";
+  if (entry.includes("SB") || entry.includes("BB")) return "blind";
+  return "system";
+}
+
+function parseLogEntry(entry) {
+  const words = entry.trim().split(/\s+/);
+  if (words.length === 0) {
+    return { type: "system", name: "", action: entry, amount: "" };
+  }
+
+  const type = getActionType(entry);
+
+  if (type === "system") {
+    return { type, name: "", action: entry, amount: "" };
+  }
+
+  const name = words[0] || "";
+  let action = "";
+  let amount = "";
+
+  if (entry.includes("체크")) action = "CHECK";
+  else if (entry.includes("콜")) action = "CALL";
+  else if (entry.includes("레이즈")) action = "RAISE";
+  else if (entry.includes("폴드")) action = "FOLD";
+  else if (entry.includes("올인")) action = "ALL-IN";
+  else if (entry.includes("SB")) action = "SB";
+  else if (entry.includes("BB")) action = "BB";
+
+  const amountMatch = entry.match(/(\d[\d,]*)/g);
+  if (amountMatch && amountMatch.length > 0) amount = amountMatch[amountMatch.length - 1];
+
+  return { type, name, action, amount };
+}
+
+function renderLogRow(entry, options = {}) {
+  const parsed = parseLogEntry(entry);
+  const classes = ["log-row"];
+  if (options.isLatest) classes.push("latest");
+  if (options.isMine) classes.push("mine");
+  if (options.isImportant) classes.push("important");
+
+  if (parsed.type === "system") {
+    return `
+      <div class="${classes.join(" ")}">
+        <span class="log-pill system">${entry}</span>
+      </div>
+    `;
+  }
+
+  const amountHtml = parsed.amount
+    ? `<span class="log-pill amount">${parsed.amount}</span>`
+    : "";
+
+  return `
+    <div class="${classes.join(" ")}">
+      <span class="log-pill name">${parsed.name}</span>
+      <span class="log-pill ${parsed.type}">${parsed.action}</span>
+      ${amountHtml}
+    </div>
+  `;
+}
+
+function renderLogs(logs) {
+  logBox.innerHTML = "";
+
+  if (!logs || logs.length === 0) {
+    logBox.innerHTML = `<div class="log-empty">아직 로그 없음</div>`;
     return;
   }
 
-  if (
-    reason === "river_showdown" &&
-    alive.length === 2 &&
-    room.lastWinnerIds.length === 1
-  ) {
-    const loser = alive.find((p) => p.id !== room.lastWinnerIds[0]);
-    if (loser) {
-      queueRevealDecision(
-        room,
-        loser.id,
-        "loser_showdown",
-        "패배한 핸드를 공개하시겠습니까?"
-      );
-    }
-  }
-}
-
-function showdown(room, reason = "river_showdown") {
-  const alive = activePlayers(room);
-  room.lastWinnerNames = [];
-  room.lastWinnerIds = [];
-  room.hiddenHandPlayerIds = [];
-  clearRevealDecision(room);
-  resetPotWinTexts(room);
-
-  if (alive.length === 0) return;
-
-  room.players.forEach((p) => {
-    if (p.folded) {
-      p.lastHandName = "폴드";
-      p.potWinText = "폴드";
-    } else {
-      const evaluation = evaluateSevenCards([...p.cards, ...room.community]);
-      p.lastHandName = getHandLabel(evaluation);
-    }
+  let globalEntries = [];
+  logs.forEach(group => {
+    group.entries.forEach(entry => globalEntries.push({ street: group.street, entry }));
   });
 
-  if (alive.length === 1) {
-    alive[0].chips += room.pot;
-    room.lastWinnerNames = [alive[0].name];
-    room.lastWinnerIds = [alive[0].id];
-    alive[0].potWinText = "팟 승리";
-    room.result = `${alive[0].name} 승리!`;
-    pushLogEntry(room, `${alive[0].name} 승리`);
+  const latestEntry = globalEntries.length > 0 ? globalEntries[globalEntries.length - 1].entry : "";
 
-    room.pot = 0;
-    room.bettingOpen = false;
-    room.mustActIds = [];
-    room.canRaiseIds = [];
-    room.street = "리버완료";
-    finalizeChipChangeTexts(room);
+  logs.forEach((group) => {
+    const streetDiv = document.createElement("div");
+    streetDiv.className = "log-street-card";
 
-    finalizeHandAndMaybeQueueReveal(room, reason);
+    const entriesHtml = group.entries.length > 0
+      ? group.entries.map((entry) => {
+          const parsed = parseLogEntry(entry);
+          const myName = latestState?.players?.find(p => p.isMe)?.name || "";
+          return renderLogRow(entry, {
+            isLatest: entry === latestEntry,
+            isMine: !!myName && parsed.name === myName,
+            isImportant: parsed.type === "raise" || parsed.type === "allin"
+          });
+        }).join("")
+      : `<div class="log-empty">행동 없음</div>`;
+
+    streetDiv.innerHTML = `
+      <div class="log-street-header">
+        <div class="log-street-title">${group.street}</div>
+      </div>
+      <div class="log-street-body">
+        ${entriesHtml}
+      </div>
+    `;
+
+    logBox.appendChild(streetDiv);
+  });
+}
+
+function updateCallButton(state) {
+  const need = Math.max((state.currentBet || 0) - (state.myRoundBet || 0), 0);
+  callBtn.textContent = need === 0 ? "Check" : `Call ${formatNumber(need)}`;
+}
+
+function updateTurnBanner(state) {
+  const turnName = state.currentTurnName || "-";
+  turnBox.textContent = `현재 턴: ${turnName}`;
+  turnBanner.textContent = `현재 턴: ${turnName}`;
+}
+
+function updateRoomInfo() {
+  if (!latestRoomInfo.inRoom) {
+    roomInfoBox.textContent = "방: -";
+    blindBox.textContent = `블라인드: ${formatNumber(latestRoomInfo.settings.smallBlind)} / ${formatNumber(latestRoomInfo.settings.bigBlind)}`;
     return;
   }
 
-  const sidePots = buildSidePots(room);
-  const summaryLines = [];
+  const hostText = latestRoomInfo.hostName ? ` / 방장: ${latestRoomInfo.hostName}` : "";
+  roomInfoBox.textContent = `방: ${latestRoomInfo.roomCode} (${latestRoomInfo.playerCount}명${hostText})`;
+  blindBox.textContent = `블라인드: ${formatNumber(latestRoomInfo.settings.smallBlind)} / ${formatNumber(latestRoomInfo.settings.bigBlind)}`;
 
-  if (sidePots.length === 0) {
-    const evaluatedAlive = alive.map((player) => ({
-      player,
-      evaluation: evaluateSevenCards([...player.cards, ...room.community])
-    }));
+  startingChipsInput.value = latestRoomInfo.settings.startingChips;
+  smallBlindInput.value = latestRoomInfo.settings.smallBlind;
+  bigBlindInput.value = latestRoomInfo.settings.bigBlind;
+}
 
-    let bestEvaluation = evaluatedAlive[0].evaluation;
-    let winners = [evaluatedAlive[0].player];
+function updateSettingsControls(state) {
+  const inRoom = latestRoomInfo.inRoom;
+  const isHost = latestRoomInfo.isHost;
+  const pendingReveal = !!state.revealDecision?.pending;
+  const canEdit = inRoom && isHost && !pendingReveal && (state.street === "대기중" || state.street === "리버완료");
 
-    for (let i = 1; i < evaluatedAlive.length; i++) {
-      const current = evaluatedAlive[i];
-      const cmp = compareEvaluations(current.evaluation, bestEvaluation);
-      if (cmp > 0) {
-        bestEvaluation = current.evaluation;
-        winners = [current.player];
-      } else if (cmp === 0) {
-        winners.push(current.player);
-      }
-    }
+  startingChipsInput.disabled = !canEdit;
+  smallBlindInput.disabled = !canEdit;
+  bigBlindInput.disabled = !canEdit;
+  applySettingsBtn.disabled = !canEdit;
+}
 
-    distributeAmountAmongWinners(winners, room.pot);
-    room.lastWinnerNames = winners.map((p) => p.name);
-    room.lastWinnerIds = winners.map((p) => p.id);
+function updateBottomButtons(state) {
+  const inRoom = latestRoomInfo.inRoom;
+  const isHost = latestRoomInfo.isHost;
+  const canAct = !!state.myTurn && inRoom;
+  const canRaise = !!state.canRaise && inRoom && !state.revealDecision?.pending;
+  const handFinished = state.street === "리버완료";
+  const pendingReveal = !!state.revealDecision?.pending;
 
-    winners.forEach((winner) => {
-      winner.potWinTexts.push(winners.length === 1 ? "팟 승리" : "팟 공동승리");
-    });
+  startBtn.disabled = !inRoom || !isHost || handFinished || pendingReveal;
+  leaveRoomBtn.disabled = !inRoom;
 
-    if (winners.length === 1) {
-      room.result = `${winners[0].name} 승리! (${getHandLabel(bestEvaluation)})`;
-    } else {
-      room.result = `${winners.map((p) => p.name).join(", ")} 공동 승리! (${getHandLabel(bestEvaluation)})`;
-    }
+  foldBtn.disabled = !canAct || handFinished;
+  callBtn.disabled = !canAct || handFinished;
+  raiseBtn.disabled = !canRaise || handFinished;
+  allInBtn.disabled = !canAct || handFinished || (state.myChips || 0) <= 0;
 
-    pushLogEntry(room, room.result);
+  if (handFinished) {
+    showdownBtn.textContent = "다음 게임";
+    showdownBtn.disabled = !inRoom || !isHost || pendingReveal;
   } else {
-    sidePots.forEach((sidePot, index) => {
-      const eligiblePlayers = activePlayers(room).filter((p) => sidePot.eligibleIds.includes(p.id));
-      if (eligiblePlayers.length === 0) return;
-
-      const evaluatedEligible = eligiblePlayers.map((player) => ({
-        player,
-        evaluation: evaluateSevenCards([...player.cards, ...room.community])
-      }));
-
-      let bestEvaluation = evaluatedEligible[0].evaluation;
-      let winners = [evaluatedEligible[0].player];
-
-      for (let i = 1; i < evaluatedEligible.length; i++) {
-        const current = evaluatedEligible[i];
-        const cmp = compareEvaluations(current.evaluation, bestEvaluation);
-        if (cmp > 0) {
-          bestEvaluation = current.evaluation;
-          winners = [current.player];
-        } else if (cmp === 0) {
-          winners.push(current.player);
-        }
-      }
-
-      distributeAmountAmongWinners(winners, sidePot.amount);
-
-      const potLabel = index === 0 ? "메인팟" : `사이드팟${index}`;
-      winners.forEach((winner) => {
-        winner.potWinTexts.push(winners.length === 1 ? `${potLabel} 승리` : `${potLabel} 공동승리`);
-      });
-
-      winners.forEach((winner) => {
-        if (!room.lastWinnerNames.includes(winner.name)) room.lastWinnerNames.push(winner.name);
-        if (!room.lastWinnerIds.includes(winner.id)) room.lastWinnerIds.push(winner.id);
-      });
-
-      if (winners.length === 1) {
-        summaryLines.push(`${potLabel}: ${winners[0].name} (${getHandLabel(bestEvaluation)})`);
-      } else {
-        summaryLines.push(`${potLabel}: ${winners.map((p) => p.name).join(", ")} (${getHandLabel(bestEvaluation)})`);
-      }
-    });
-
-    room.result = summaryLines.join(" | ");
-    pushLogEntry(room, room.result);
+    showdownBtn.textContent = "다음 게임";
+    showdownBtn.disabled = true;
   }
 
-  room.players.forEach((p) => {
-    if (!p.folded) p.potWinText = (p.potWinTexts || []).join(", ");
-  });
-
-  room.pot = 0;
-  room.bettingOpen = false;
-  room.mustActIds = [];
-  room.canRaiseIds = [];
-  room.street = "리버완료";
-  finalizeChipChangeTexts(room);
-
-  finalizeHandAndMaybeQueueReveal(room, reason);
+  raiseAmountInput.disabled = !canRaise || handFinished;
+  updateSettingsControls(state);
 }
 
-function startStreet(room, firstActorIndex) {
-  room.players.forEach((p) => {
-    p.roundBet = 0;
-    p.actedSinceFullRaise = p.folded;
-  });
+function buildLastAction(entry, playerName) {
+  if (!entry || !playerName) return { text: "", type: "" };
+  if (!entry.startsWith(playerName + " ")) return { text: "", type: "" };
 
-  room.currentBet = 0;
-  room.lastFullRaiseSize = room.settings.bigBlind;
-  room.bettingOpen = true;
+  const parsed = parseLogEntry(entry);
+  if (parsed.type === "system" || parsed.type === "blind") return { text: parsed.action, type: parsed.type };
 
-  room.mustActIds = orderedActionableIdsFrom(room, firstActorIndex);
-  room.canRaiseIds = [...room.mustActIds];
-  setCurrentTurnFromMustAct(room);
+  return { text: parsed.action, type: parsed.type };
 }
 
-function openActionAfterFullRaise(room, actorIndex, actorId, newCurrentBet, raiseSize) {
-  room.currentBet = newCurrentBet;
-  room.lastFullRaiseSize = raiseSize;
+function getLatestPlayerActions(actionLogs) {
+  const map = new Map();
+  if (!actionLogs) return map;
 
-  room.players.forEach((p) => {
-    if (isActionable(p)) p.actedSinceFullRaise = false;
-  });
-
-  const actor = getPlayerById(room, actorId);
-  if (actor) actor.actedSinceFullRaise = true;
-
-  const nextIndex = (actorIndex + 1) % room.players.length;
-  room.mustActIds = orderedActionableIdsFrom(room, nextIndex, actorId);
-  room.canRaiseIds = [...room.mustActIds];
-  setCurrentTurnFromMustAct(room);
-}
-
-function openActionAfterShortAllIn(room, actorIndex, actorId, newCurrentBet) {
-  room.currentBet = newCurrentBet;
-
-  const nextIndex = (actorIndex + 1) % room.players.length;
-  const ordered = orderedActionableIdsFrom(room, nextIndex, actorId);
-
-  room.mustActIds = ordered.filter((id) => {
-    const p = getPlayerById(room, id);
-    if (!p) return false;
-    return !p.actedSinceFullRaise || p.roundBet < room.currentBet;
-  });
-
-  room.canRaiseIds = room.mustActIds.filter((id) => {
-    const p = getPlayerById(room, id);
-    if (!p) return false;
-    return !p.actedSinceFullRaise;
-  });
-
-  setCurrentTurnFromMustAct(room);
-}
-
-function postBlinds(room) {
-  const sbIndex = getSmallBlindIndex(room);
-  const bbIndex = getBigBlindIndex(room);
-
-  const sbPlayer = room.players[sbIndex];
-  const bbPlayer = room.players[bbIndex];
-
-  const sbAmount = Math.min(room.settings.smallBlind, sbPlayer.chips);
-  const bbAmount = Math.min(room.settings.bigBlind, bbPlayer.chips);
-
-  sbPlayer.chips -= sbAmount;
-  bbPlayer.chips -= bbAmount;
-
-  sbPlayer.roundBet = sbAmount;
-  bbPlayer.roundBet = bbAmount;
-
-  sbPlayer.totalCommitted += sbAmount;
-  bbPlayer.totalCommitted += bbAmount;
-
-  sbPlayer.actedSinceFullRaise = false;
-  bbPlayer.actedSinceFullRaise = false;
-
-  room.pot += sbAmount + bbAmount;
-  room.currentBet = bbAmount;
-  room.lastFullRaiseSize = room.settings.bigBlind;
-  room.bettingOpen = true;
-
-  pushLogEntry(room, `${sbPlayer.name} SB ${sbAmount}`);
-  pushLogEntry(room, `${bbPlayer.name} BB ${bbAmount}`);
-
-  const firstActorIndex = getFirstToActPreflop(room);
-  room.mustActIds = orderedActionableIdsFrom(room, firstActorIndex);
-  room.canRaiseIds = [...room.mustActIds];
-  setCurrentTurnFromMustAct(room);
-}
-
-function revealFlop(room) {
-  room.street = "플랍";
-  room.community[0] = room.deck.pop();
-  room.community[1] = room.deck.pop();
-  room.community[2] = room.deck.pop();
-  startLogStreet(room, "플랍");
-}
-
-function revealTurn(room) {
-  room.street = "턴";
-  room.community[3] = room.deck.pop();
-  startLogStreet(room, "턴");
-}
-
-function revealRiver(room) {
-  room.street = "리버";
-  room.community[4] = room.deck.pop();
-  startLogStreet(room, "리버");
-}
-
-function runOutBoardToShowdown(room) {
-  pushLogEntry(room, "추가 액션 불가 → 자동 쇼다운");
-
-  while (room.street !== "리버완료") {
-    if (room.street === "프리플랍") {
-      revealFlop(room);
-      continue;
-    }
-    if (room.street === "플랍") {
-      revealTurn(room);
-      continue;
-    }
-    if (room.street === "턴") {
-      revealRiver(room);
-      continue;
-    }
-    if (room.street === "리버") {
-      showdown(room, "auto_allin_showdown");
-      break;
-    }
-    break;
-  }
-}
-
-function advanceStreet(room) {
-  if (room.street === "프리플랍") {
-    revealFlop(room);
-    startStreet(room, getFirstToActPostflop(room));
-    return;
-  }
-
-  if (room.street === "플랍") {
-    revealTurn(room);
-    startStreet(room, getFirstToActPostflop(room));
-    return;
-  }
-
-  if (room.street === "턴") {
-    revealRiver(room);
-    startStreet(room, getFirstToActPostflop(room));
-    return;
-  }
-
-  if (room.street === "리버") {
-    showdown(room, "river_showdown");
-  }
-}
-
-function maybeAdvanceRound(room) {
-  if (activePlayers(room).length === 1) {
-    showdown(room, "fold_win");
-    return;
-  }
-
-  if (room.mustActIds.length > 0) {
-    setCurrentTurnFromMustAct(room);
-    return;
-  }
-
-  const alive = activePlayers(room);
-  const actionableAlive = alive.filter((p) => p.chips > 0);
-
-  if (alive.length > 1 && actionableAlive.length <= 1) {
-    runOutBoardToShowdown(room);
-    return;
-  }
-
-  advanceStreet(room);
-}
-
-function startHand(room, resetStacks) {
-  room.hiddenHandPlayerIds = [];
-  clearRevealDecision(room);
-
-  if (resetStacks) {
-    room.players.forEach((p) => {
-      p.chips = room.settings.startingChips;
-    });
-  }
-
-  if (!canStartAnotherHand(room)) {
-    room.result = "칩이 있는 플레이어가 2명 이상 있어야 시작할 수 있습니다";
-    room.lastWinnerNames = [];
-    room.lastWinnerIds = [];
-    room.bettingOpen = false;
-    room.mustActIds = [];
-    room.canRaiseIds = [];
-    room.street = "대기중";
-    return;
-  }
-
-  room.deck = createDeck();
-  shuffle(room.deck);
-
-  room.community = ["", "", "", "", ""];
-  room.pot = 0;
-  room.currentBet = 0;
-  room.result = "";
-  room.lastWinnerNames = [];
-  room.lastWinnerIds = [];
-  room.street = "프리플랍";
-  room.bettingOpen = true;
-  room.mustActIds = [];
-  room.canRaiseIds = [];
-  room.lastFullRaiseSize = room.settings.bigBlind;
-  room.actionLogs = [];
-
-  room.dealerIndex = room.dealerIndex === -1 ? 0 : (room.dealerIndex + 1) % room.players.length;
-
-  room.players.forEach((p) => {
-    p.folded = p.chips <= 0;
-    p.cards = p.folded ? ["", ""] : [room.deck.pop(), room.deck.pop()];
-    p.roundBet = 0;
-    p.totalCommitted = 0;
-    p.actedSinceFullRaise = p.folded;
-    p.lastHandName = "";
-    p.potWinTexts = [];
-    p.potWinText = "";
-    p.startChips = p.chips;
-    p.chipChangeValue = 0;
-    p.chipChangeText = "";
-  });
-
-  startLogStreet(room, "프리플랍");
-  postBlinds(room);
-}
-
-function getMinRaiseAmount(room, player, canRaise) {
-  if (!player || !canRaise) return 0;
-  const minTarget = Math.max(room.currentBet + room.lastFullRaiseSize, player.roundBet + room.lastFullRaiseSize);
-  return Math.min(player.chips, minTarget);
-}
-
-function sanitizeSettings(input, currentSettings) {
-  const start = Number(input?.startingChips);
-  const sb = Number(input?.smallBlind);
-  const bb = Number(input?.bigBlind);
-
-  const startingChips = Number.isFinite(start) ? Math.max(1000, Math.floor(start)) : currentSettings.startingChips;
-  const smallBlind = Number.isFinite(sb) ? Math.max(1, Math.floor(sb)) : currentSettings.smallBlind;
-  const bigBlind = Number.isFinite(bb) ? Math.max(1, Math.floor(bb)) : currentSettings.bigBlind;
-
-  return {
-    startingChips,
-    smallBlind,
-    bigBlind: bigBlind < smallBlind ? smallBlind : bigBlind
-  };
-}
-
-function revealDecisionPayloadForSocket(room, socketId) {
-  if (!room.revealDecision) {
-    return {
-      pending: false,
-      canDecide: false,
-      title: "",
-      message: "",
-      waitingMessage: ""
-    };
-  }
-
-  const canDecide = room.revealDecision.playerId === socketId;
-
-  // 쇼다운 패자 공개 선택은 패자 본인에게만 보임
-  if (room.revealDecision.type === "loser_showdown") {
-    if (!canDecide) {
-      return {
-        pending: false,
-        canDecide: false,
-        title: "",
-        message: "",
-        waitingMessage: ""
-      };
-    }
-
-    return {
-      pending: true,
-      canDecide: true,
-      title: "쇼다운",
-      message: room.revealDecision.message,
-      waitingMessage: ""
-    };
-  }
-
-  // 폴드 승리 후 공개 선택은 승리자 본인에게만 보임
-  if (room.revealDecision.type === "fold_win") {
-    if (!canDecide) {
-      return {
-        pending: false,
-        canDecide: false,
-        title: "",
-        message: "",
-        waitingMessage: ""
-      };
-    }
-
-    return {
-      pending: true,
-      canDecide: true,
-      title: "핸드 공개",
-      message: room.revealDecision.message,
-      waitingMessage: ""
-    };
-  }
-
-  return {
-    pending: false,
-    canDecide: false,
-    title: "",
-    message: "",
-    waitingMessage: ""
-  };
-}
-
-function sendRoomInfo(socket, room) {
-  if (!room) {
-    socket.emit("roomInfo", {
-      inRoom: false,
-      roomCode: "",
-      playerCount: 0,
-      isHost: false,
-      hostName: "",
-      settings: {
-        startingChips: DEFAULT_STARTING_CHIPS,
-        smallBlind: DEFAULT_SMALL_BLIND,
-        bigBlind: DEFAULT_BIG_BLIND
-      }
-    });
-    return;
-  }
-
-  const host = getPlayerById(room, room.hostId);
-
-  socket.emit("roomInfo", {
-    inRoom: true,
-    roomCode: room.roomCode,
-    playerCount: room.players.length,
-    isHost: room.hostId === socket.id,
-    hostName: host ? host.name : "",
-    settings: room.settings
-  });
-}
-
-function sendState(room) {
-  const sbIndex = room.players.length >= 2 ? getSmallBlindIndex(room) : -1;
-  const bbIndex = room.players.length >= 2 ? getBigBlindIndex(room) : -1;
-
-  room.players.forEach((player) => {
-    const socket = io.sockets.sockets.get(player.id);
-    if (!socket) return;
-
-    const meId = socket.id;
-    const me = getPlayerById(room, meId);
-    const myTurn = room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === meId;
-    const myCanRaise = myTurn && room.canRaiseIds.includes(meId);
-
-    sendRoomInfo(socket, room);
-
-    socket.emit("state", {
-      pot: room.pot,
-      street: room.street,
-      result: room.result,
-      actionLogs: room.actionLogs,
-      winnerNames: room.street === "리버완료" ? room.lastWinnerNames : [],
-      currentTurnName: room.bettingOpen && room.mustActIds.length > 0
-        ? (getPlayerById(room, room.mustActIds[0])?.name || "-")
-        : "-",
-      myTurn,
-      canRaise: myCanRaise,
-      myChips: me ? me.chips : 0,
-      currentBet: room.currentBet,
-      myRoundBet: me ? me.roundBet : 0,
-      minRaiseAmount: getMinRaiseAmount(room, me, myCanRaise),
-      community: room.community,
-      settings: room.settings,
-      revealDecision: revealDecisionPayloadForSocket(room, meId),
-      players: room.players.map((p, i) => {
-        const hiddenForOthers = room.hiddenHandPlayerIds.includes(p.id) && p.id !== meId;
-        const visibleAtShowdown = room.street === "리버완료" && !hiddenForOthers;
-        const cardsVisible = p.id === meId || visibleAtShowdown;
-
-        return {
-          id: p.id,
-          name: p.name,
-          chips: p.chips,
-          folded: p.folded,
-          isCurrentTurn: room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === p.id,
-          isMe: p.id === meId,
-          isDealer: i === room.dealerIndex,
-          isSmallBlind: i === sbIndex,
-          isBigBlind: i === bbIndex,
-          positionLabel: getPositionLabel(room, i),
-          roundBetText: room.street !== "리버완료" && p.roundBet > 0 ? `이번 라운드: ${p.roundBet}` : "",
-          handName: visibleAtShowdown || p.id === meId ? p.lastHandName : "",
-          potWinText: room.street === "리버완료" ? p.potWinText : "",
-          chipChangeValue: room.street === "리버완료" ? p.chipChangeValue : 0,
-          chipChangeText: room.street === "리버완료" ? p.chipChangeText : "",
-          cardsVisible,
-          cards: cardsVisible ? p.cards : ["🂠", "🂠"]
-        };
-      })
+  actionLogs.forEach(group => {
+    group.entries.forEach(entry => {
+      const parsed = parseLogEntry(entry);
+      if (!parsed.name) return;
+      map.set(parsed.name, entry);
     });
   });
+
+  return map;
 }
 
-function cleanupRoomIfEmpty(roomCode) {
-  const room = rooms.get(roomCode);
-  if (!room) return;
-  if (room.players.length === 0) rooms.delete(roomCode);
-}
+function updateRevealModal(state) {
+  const reveal = state.revealDecision;
 
-function leaveCurrentRoom(socket) {
-  const roomCode = socketRoomMap.get(socket.id);
-  if (!roomCode) return;
-
-  const room = rooms.get(roomCode);
-  socket.leave(roomCode);
-  socketRoomMap.delete(socket.id);
-
-  if (!room) {
-    sendRoomInfo(socket, null);
+  if (!reveal || !reveal.pending || !reveal.canDecide) {
+    revealDecisionModal.classList.add("hidden");
     return;
   }
 
-  if (room.revealDecision && room.revealDecision.playerId === socket.id) {
-    clearRevealDecision(room);
-  }
+  revealDecisionModal.classList.remove("hidden");
+  revealDecisionTitle.textContent = reveal.title || "쇼다운";
+  revealDecisionMessage.textContent = reveal.message || "";
 
-  room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== socket.id);
-
-  const removedIndex = room.players.findIndex((p) => p.id === socket.id);
-
-  room.mustActIds = room.mustActIds.filter((id) => id !== socket.id);
-  room.canRaiseIds = room.canRaiseIds.filter((id) => id !== socket.id);
-  room.players = room.players.filter((p) => p.id !== socket.id);
-
-  if (room.players.length === 0) {
-    cleanupRoomIfEmpty(roomCode);
-    sendRoomInfo(socket, null);
-    return;
-  }
-
-  if (room.hostId === socket.id) {
-    room.hostId = room.players[0].id;
-  }
-
-  if (removedIndex !== -1) {
-    if (room.dealerIndex > removedIndex) room.dealerIndex -= 1;
-    else if (room.dealerIndex === removedIndex) room.dealerIndex = room.dealerIndex % room.players.length;
-  }
-
-  if (activePlayers(room).length === 1 && room.pot > 0) {
-    showdown(room, "fold_win");
-    sendState(room);
-    sendRoomInfo(socket, null);
-    return;
-  }
-
-  if (room.bettingOpen) {
-    maybeAdvanceRound(room);
-  }
-
-  sendState(room);
-  sendRoomInfo(socket, null);
+  revealDecisionButtons.classList.remove("hidden");
+  revealDecisionWaiting.classList.add("hidden");
+  revealDecisionWaiting.textContent = "";
 }
 
-io.on("connection", (socket) => {
-  sendRoomInfo(socket, null);
+function renderState(state) {
+  latestState = state;
+  updateRaiseUi(state);
+  updateCallButton(state);
+  updateTurnBanner(state);
+  updateLogPanelUi();
+  updateRoomInfo();
+  updateRevealModal(state);
 
-  socket.on("createRoom", ({ name }) => {
-    const trimmedName = String(name || "").trim();
-    if (!trimmedName) return;
+  potBox.textContent = `팟: ${formatNumber(state.pot)}`;
+  potCenterValue.textContent = formatNumber(state.pot);
+  streetBox.textContent = `단계: ${state.street}`;
+  resultBox.textContent = state.result || "";
 
-    leaveCurrentRoom(socket);
+  renderLogs(state.actionLogs);
 
-    let roomCode = generateRoomCode();
-    while (rooms.has(roomCode)) roomCode = generateRoomCode();
+  playersLayer.innerHTML = "";
 
-    const room = createRoomState(roomCode);
-    room.hostId = socket.id;
-    rooms.set(roomCode, room);
+  const positions = getSeatPositions(state.players.length);
+  const winnerNames = state.winnerNames || [];
+  const latestPlayerActions = getLatestPlayerActions(state.actionLogs);
 
-    room.players.push({
-      id: socket.id,
-      name: trimmedName,
-      chips: room.settings.startingChips,
-      cards: ["?", "?"],
-      folded: false,
-      roundBet: 0,
-      totalCommitted: 0,
-      actedSinceFullRaise: false,
-      lastHandName: "",
-      potWinTexts: [],
-      potWinText: "",
-      startChips: room.settings.startingChips,
-      chipChangeValue: 0,
-      chipChangeText: ""
-    });
+  state.players.forEach((p, index) => {
+    const seat = positions[index];
+    const wrap = document.createElement("div");
+    wrap.className = "player-seat";
 
-    socket.join(roomCode);
-    socketRoomMap.set(socket.id, roomCode);
-    sendState(room);
+    if (p.isCurrentTurn) wrap.classList.add("current-turn");
+    if (p.folded) wrap.classList.add("folded");
+    if (winnerNames.includes(p.name)) wrap.classList.add("winner");
+
+    wrap.style.left = `${seat.left}%`;
+    wrap.style.top = `${seat.top}%`;
+
+    const badges = [];
+    if (p.positionLabel) badges.push(`<span class="badge">${p.positionLabel}</span>`);
+    if (p.isDealer) badges.push(`<span class="badge dealer">D</span>`);
+    if (p.isSmallBlind) badges.push(`<span class="badge sb">SB</span>`);
+    if (p.isBigBlind) badges.push(`<span class="badge bb">BB</span>`);
+
+    const handInfo = p.handName || "";
+    const potWinInfo = p.potWinText || "";
+    const roundBetInfo = p.roundBetText || "";
+    const chipChange = p.chipChangeText || "";
+    const chipColor =
+      p.chipChangeValue > 0 ? "#86efac" :
+      p.chipChangeValue < 0 ? "#fca5a5" :
+      "#e5e7eb";
+
+    const lastActionEntry = latestPlayerActions.get(p.name) || "";
+    const lastAction = buildLastAction(lastActionEntry, p.name);
+
+    const winnerBadgeHtml = winnerNames.includes(p.name)
+      ? `<div class="winner-badge">WINNER</div>`
+      : "";
+
+    const crownHtml = winnerNames.includes(p.name)
+      ? `<span class="winner-crown">👑</span>`
+      : "";
+
+    const lastActionHtml = lastAction.text
+      ? `<div class="player-last-action ${lastAction.type}">${lastAction.text}</div>`
+      : "";
+
+    wrap.innerHTML = `
+      <div class="player-card">
+        <div class="player-name-row">
+          <div class="player-name">${p.name}${p.isMe ? " (나)" : ""}</div>
+          ${crownHtml}
+        </div>
+
+        <div class="player-chip-row">
+          <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
+        </div>
+
+        ${winnerBadgeHtml}
+
+        <div class="player-badges">${badges.join("")}</div>
+
+        <div class="player-cards">
+          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[0], p.cardsVisible)}</div>
+          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[1], p.cardsVisible)}</div>
+        </div>
+
+        ${lastActionHtml}
+        <div class="player-extra">${roundBetInfo}</div>
+        <div class="player-extra">${handInfo}</div>
+        <div class="player-extra">${potWinInfo}</div>
+        <div class="player-delta" style="color:${chipColor};">
+          ${chipChange}
+        </div>
+      </div>
+    `;
+
+    playersLayer.appendChild(wrap);
   });
 
-  socket.on("joinRoom", ({ roomCode, name }) => {
-    const trimmedName = String(name || "").trim();
-    const normalizedCode = String(roomCode || "").trim().toUpperCase();
-    if (!trimmedName || !normalizedCode) return;
+  const slots = document.querySelectorAll(".card-slot");
 
-    const room = rooms.get(normalizedCode);
-    if (!room) {
-      socket.emit("joinRoomError", "존재하지 않는 방 코드입니다");
-      return;
+  slots.forEach((slot, i) => {
+    const card = state.community[i] || "";
+    if (card && previousCommunity[i] !== card) {
+      slot.classList.remove("card-appear");
+      void slot.offsetWidth;
+      slot.classList.add("card-appear");
     }
-
-    leaveCurrentRoom(socket);
-
-    room.players.push({
-      id: socket.id,
-      name: trimmedName,
-      chips: room.settings.startingChips,
-      cards: ["?", "?"],
-      folded: false,
-      roundBet: 0,
-      totalCommitted: 0,
-      actedSinceFullRaise: false,
-      lastHandName: "",
-      potWinTexts: [],
-      potWinText: "",
-      startChips: room.settings.startingChips,
-      chipChangeValue: 0,
-      chipChangeText: ""
-    });
-
-    socket.join(normalizedCode);
-    socketRoomMap.set(socket.id, normalizedCode);
-    sendState(room);
+    slot.innerHTML = card ? formatCardHtml(card, true) : "";
   });
 
-  socket.on("updateSettings", (incomingSettings) => {
-    const room = getRoomBySocket(socket.id);
-    if (!room) return;
-    if (room.hostId !== socket.id) return;
-    if (room.revealDecision) return;
-    if (room.street !== "대기중" && room.street !== "리버완료") return;
+  previousCommunity = [...state.community];
+  updateBottomButtons(state);
+}
 
-    room.settings = sanitizeSettings(incomingSettings, room.settings);
-
-    if (room.street === "대기중") {
-      room.players.forEach((p) => {
-        p.chips = room.settings.startingChips;
-        p.startChips = room.settings.startingChips;
-      });
-    }
-
-    sendState(room);
-  });
-
-  socket.on("chooseHandReveal", ({ action }) => {
-    const room = getRoomBySocket(socket.id);
-    if (!room || !room.revealDecision) return;
-    if (room.revealDecision.playerId !== socket.id) return;
-
-    if (action === "reveal") {
-      room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== socket.id);
-    }
-
-    if (action === "hide") {
-      if (!room.hiddenHandPlayerIds.includes(socket.id)) room.hiddenHandPlayerIds.push(socket.id);
-    }
-
-    clearRevealDecision(room);
-    sendState(room);
-  });
-
-  socket.on("leaveRoom", () => {
-    leaveCurrentRoom(socket);
-  });
-
-  socket.on("startGame", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room) return;
-    if (room.hostId !== socket.id) return;
-    if (room.players.length < 2) return;
-    if (room.revealDecision) return;
-
-    startHand(room, true);
-    sendState(room);
-  });
-
-  socket.on("nextHand", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room) return;
-    if (room.hostId !== socket.id) return;
-    if (room.street !== "리버완료") return;
-    if (room.revealDecision) return;
-    if (!canStartAnotherHand(room)) return;
-
-    startHand(room, false);
-    sendState(room);
-  });
-
-  socket.on("call", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room || room.revealDecision) return;
-    if (!room.bettingOpen || room.mustActIds.length === 0) return;
-
-    const actorId = room.mustActIds[0];
-    if (actorId !== socket.id) return;
-
-    const actorIndex = getPlayerIndexById(room, actorId);
-    const p = room.players[actorIndex];
-    if (!p || p.folded) return;
-
-    const need = room.currentBet - p.roundBet;
-    if (need > p.chips) return;
-
-    const isCheck = need === 0;
-
-    p.chips -= need;
-    room.pot += need;
-    p.roundBet = room.currentBet;
-    p.totalCommitted += need;
-    p.actedSinceFullRaise = true;
-
-    pushLogEntry(room, isCheck ? `${p.name} 체크` : `${p.name} 콜 ${need}`);
-
-    removeFromQueues(room, p.id);
-    maybeAdvanceRound(room);
-    sendState(room);
-  });
-
-  socket.on("raise", (raiseTargetAmount) => {
-    const room = getRoomBySocket(socket.id);
-    if (!room || room.revealDecision) return;
-    if (!room.bettingOpen || room.mustActIds.length === 0) return;
-
-    const actorId = room.mustActIds[0];
-    if (actorId !== socket.id) return;
-    if (!room.canRaiseIds.includes(actorId)) return;
-
-    const actorIndex = getPlayerIndexById(room, actorId);
-    const p = room.players[actorIndex];
-    if (!p || p.folded) return;
-
-    const target = Number(raiseTargetAmount);
-    if (!Number.isFinite(target)) return;
-
-    const minTarget = Math.max(room.currentBet + room.lastFullRaiseSize, p.roundBet + room.lastFullRaiseSize);
-    if (target < minTarget) return;
-
-    const need = target - p.roundBet;
-    if (need > p.chips) return;
-
-    const oldBet = room.currentBet;
-    const raiseSize = target - oldBet;
-
-    p.chips -= need;
-    room.pot += need;
-    p.roundBet = target;
-    p.totalCommitted += need;
-    p.actedSinceFullRaise = true;
-
-    pushLogEntry(room, `${p.name} 레이즈 ${target}`);
-
-    openActionAfterFullRaise(room, actorIndex, p.id, target, raiseSize);
-    maybeAdvanceRound(room);
-    sendState(room);
-  });
-
-  socket.on("allIn", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room || room.revealDecision) return;
-    if (!room.bettingOpen || room.mustActIds.length === 0) return;
-
-    const actorId = room.mustActIds[0];
-    if (actorId !== socket.id) return;
-
-    const actorIndex = getPlayerIndexById(room, actorId);
-    const p = room.players[actorIndex];
-    if (!p || p.folded || p.chips <= 0) return;
-
-    const target = p.roundBet + p.chips;
-
-    if (target <= room.currentBet) {
-      const amount = p.chips;
-      room.pot += amount;
-      p.roundBet = target;
-      p.totalCommitted += amount;
-      p.chips = 0;
-      p.actedSinceFullRaise = true;
-
-      pushLogEntry(room, `${p.name} 올인 ${target} (콜)`);
-
-      removeFromQueues(room, p.id);
-      maybeAdvanceRound(room);
-      sendState(room);
-      return;
-    }
-
-    const oldBet = room.currentBet;
-    const raiseSize = target - oldBet;
-    const need = target - p.roundBet;
-
-    p.chips -= need;
-    room.pot += need;
-    p.roundBet = target;
-    p.totalCommitted += need;
-    p.chips = 0;
-    p.actedSinceFullRaise = true;
-
-    const isFullRaise = raiseSize >= room.lastFullRaiseSize;
-
-    pushLogEntry(
-      room,
-      isFullRaise
-        ? `${p.name} 올인 ${target} (정상 레이즈)`
-        : `${p.name} 올인 ${target} (짧은 올인)`
-    );
-
-    if (isFullRaise) openActionAfterFullRaise(room, actorIndex, p.id, target, raiseSize);
-    else openActionAfterShortAllIn(room, actorIndex, p.id, target);
-
-    maybeAdvanceRound(room);
-    sendState(room);
-  });
-
-  socket.on("fold", () => {
-    const room = getRoomBySocket(socket.id);
-    if (!room || room.revealDecision) return;
-    if (!room.bettingOpen || room.mustActIds.length === 0) return;
-
-    const actorId = room.mustActIds[0];
-    if (actorId !== socket.id) return;
-
-    const actorIndex = getPlayerIndexById(room, actorId);
-    const p = room.players[actorIndex];
-    if (!p || p.folded) return;
-
-    p.folded = true;
-    p.actedSinceFullRaise = true;
-    pushLogEntry(room, `${p.name} 폴드`);
-
-    removeFromQueues(room, p.id);
-
-    if (activePlayers(room).length === 1) {
-      showdown(room, "fold_win");
-      sendState(room);
-      return;
-    }
-
-    maybeAdvanceRound(room);
-    sendState(room);
-  });
-
-  socket.on("disconnect", () => {
-    leaveCurrentRoom(socket);
-  });
+raiseAmountInput.addEventListener("input", () => {
+  setRaiseAmount(raiseAmountInput.value);
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`server running ${PORT}`);
+toggleLogPanelBtn.onclick = () => {
+  isLogPanelCollapsed = !isLogPanelCollapsed;
+  updateLogPanelUi();
+};
+
+applySettingsBtn.onclick = () => {
+  const startingChips = Number(startingChipsInput.value);
+  const smallBlind = Number(smallBlindInput.value);
+  const bigBlind = Number(bigBlindInput.value);
+
+  if (!Number.isFinite(startingChips) || startingChips < 1000) {
+    alert("시작칩은 1000 이상이어야 합니다");
+    return;
+  }
+  if (!Number.isFinite(smallBlind) || smallBlind < 1) {
+    alert("SB는 1 이상이어야 합니다");
+    return;
+  }
+  if (!Number.isFinite(bigBlind) || bigBlind < smallBlind) {
+    alert("BB는 SB 이상이어야 합니다");
+    return;
+  }
+
+  socket.emit("updateSettings", { startingChips, smallBlind, bigBlind });
+};
+
+revealHandBtn.onclick = () => {
+  socket.emit("chooseHandReveal", { action: "reveal" });
+};
+
+hideHandBtn.onclick = () => {
+  socket.emit("chooseHandReveal", { action: "hide" });
+};
+
+window.addEventListener("resize", () => {
+  if (latestState) renderState(latestState);
+});
+
+createRoomBtn.onclick = () => {
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert("이름을 입력하세요");
+    return;
+  }
+  socket.emit("createRoom", { name });
+};
+
+joinRoomBtn.onclick = () => {
+  const name = nameInput.value.trim();
+  const roomCode = roomCodeInput.value.trim().toUpperCase();
+
+  if (!name) {
+    alert("이름을 입력하세요");
+    return;
+  }
+  if (!roomCode) {
+    alert("방 코드를 입력하세요");
+    return;
+  }
+
+  socket.emit("joinRoom", { roomCode, name });
+};
+
+leaveRoomBtn.onclick = () => {
+  socket.emit("leaveRoom");
+};
+
+startBtn.onclick = () => socket.emit("startGame");
+foldBtn.onclick = () => socket.emit("fold");
+callBtn.onclick = () => socket.emit("call");
+raiseBtn.onclick = () => socket.emit("raise", Number(raiseAmountInput.value));
+allInBtn.onclick = () => socket.emit("allIn");
+
+showdownBtn.onclick = () => {
+  if (!latestState) return;
+  if (latestState.street === "리버완료" && !latestState.revealDecision?.pending) {
+    socket.emit("nextHand");
+  }
+};
+
+socket.on("roomInfo", (roomInfo) => {
+  latestRoomInfo = roomInfo;
+  updateRoomInfo();
+
+  if (!roomInfo.inRoom) {
+    playersLayer.innerHTML = "";
+    resultBox.textContent = "";
+    potBox.textContent = "팟: 0";
+    potCenterValue.textContent = "0";
+    turnBox.textContent = "현재 턴: -";
+    turnBanner.textContent = "현재 턴: -";
+    streetBox.textContent = "단계: 대기중";
+    blindBox.textContent = `블라인드: ${formatNumber(roomInfo.settings.smallBlind)} / ${formatNumber(roomInfo.settings.bigBlind)}`;
+    logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
+    revealDecisionModal.classList.add("hidden");
+
+    startBtn.disabled = true;
+    leaveRoomBtn.disabled = true;
+    foldBtn.disabled = true;
+    callBtn.disabled = true;
+    raiseBtn.disabled = true;
+    allInBtn.disabled = true;
+    showdownBtn.disabled = true;
+    showdownBtn.textContent = "다음 게임";
+    raiseAmountInput.disabled = true;
+
+    startingChipsInput.value = roomInfo.settings.startingChips;
+    smallBlindInput.value = roomInfo.settings.smallBlind;
+    bigBlindInput.value = roomInfo.settings.bigBlind;
+
+    startingChipsInput.disabled = true;
+    smallBlindInput.disabled = true;
+    bigBlindInput.disabled = true;
+    applySettingsBtn.disabled = true;
+  }
+});
+
+socket.on("joinRoomError", (message) => {
+  alert(message);
+});
+
+socket.on("state", (state) => {
+  renderState(state);
 });
