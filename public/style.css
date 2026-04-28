@@ -1676,3 +1676,13 @@ body {
     display: none !important;
   }
 }
+/* 상단 상태 정보 숨김 */
+.status-row {
+  display: none !important;
+}
+
+/* turn banner도 숨김 */
+#turnBanner,
+.turn-banner {
+  display: none !important;
+}
