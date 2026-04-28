@@ -445,9 +445,13 @@ function renderState(state) {
         <div class="player-badges">${badges.join("")}</div>
 
         <div class="player-cards">
-          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[0], p.cardsVisible)}</div>
-          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[1], p.cardsVisible)}</div>
-        </div>
+  <div class="${p.folded ? "hidden-card" : (p.cardsVisible ? "small-card" : "hidden-card")}">
+    ${p.folded ? "🂠" : formatCardHtml(p.cards[0], p.cardsVisible)}
+  </div>
+  <div class="${p.folded ? "hidden-card" : (p.cardsVisible ? "small-card" : "hidden-card")}">
+    ${p.folded ? "🂠" : formatCardHtml(p.cards[1], p.cardsVisible)}
+  </div>
+</div>
 
         ${lastActionHtml}
         <div class="player-extra">${roundBetInfo}</div>
