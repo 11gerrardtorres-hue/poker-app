@@ -1686,3 +1686,18 @@ body {
 .turn-banner {
   display: none !important;
 }
+/* 상태칩은 숨기되 방 코드만 다시 표시 */
+.status-row {
+  display: flex !important;
+}
+
+#potBox,
+#turnBox,
+#streetBox,
+#blindBox {
+  display: none !important;
+}
+
+#roomInfoBox {
+  display: inline-flex !important;
+}
