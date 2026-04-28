@@ -911,7 +911,7 @@ body {
   }
 
   .poker-table {
-    min-height: 900px;
+    min-height: 600px;
     border-width: 7px;
     border-radius: 48px;
   }
