@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>친구 홀덤</title>
+  <title>동건 포커</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -10,8 +10,8 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-title">친구 홀덤</div>
-        <div class="brand-subtitle">Texas Hold'em</div>
+        <div class="brand-title">동건 포커</div>
+        <div class="brand-subtitle">한게임포커에 싫증나서 만들엇읍니다..그럼20000</div>
       </div>
 
       <div class="status-row">
@@ -33,9 +33,7 @@
       <button id="leaveRoomBtn">방 나가기</button>
     </section>
 
-    <section class="join-panel">
-      <button id="joinBtn" disabled>입장은 방 만들기/입장으로 대체됨</button>
-    </section>
+    
 
     <section class="room-panel" id="settingsPanel">
       <input id="startingChipsInput" type="number" min="1000" step="100" placeholder="시작칩">

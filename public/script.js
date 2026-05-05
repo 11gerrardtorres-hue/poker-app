@@ -351,18 +351,24 @@ function getLatestPlayerActions(actionLogs) {
 function updateRevealModal(state) {
   const reveal = state.revealDecision;
 
-  if (!reveal || !reveal.pending || !reveal.canDecide) {
+  if (!reveal || !reveal.pending) {
     revealDecisionModal.classList.add("hidden");
     return;
   }
 
   revealDecisionModal.classList.remove("hidden");
   revealDecisionTitle.textContent = reveal.title || "쇼다운";
-  revealDecisionMessage.textContent = reveal.message || "";
 
-  revealDecisionButtons.classList.remove("hidden");
-  revealDecisionWaiting.classList.add("hidden");
-  revealDecisionWaiting.textContent = "";
+  if (reveal.canDecide) {
+    revealDecisionMessage.textContent = reveal.message || "";
+    revealDecisionButtons.classList.remove("hidden");
+    revealDecisionWaiting.classList.add("hidden");
+  } else {
+    revealDecisionButtons.classList.add("hidden");
+    revealDecisionWaiting.classList.remove("hidden");
+    revealDecisionWaiting.textContent = reveal.waitingMessage || "상대가 선택 중입니다";
+    revealDecisionMessage.textContent = "";
+  }
 }
 
 function renderState(state) {
@@ -445,13 +451,9 @@ function renderState(state) {
         <div class="player-badges">${badges.join("")}</div>
 
         <div class="player-cards">
-  <div class="${p.folded ? "hidden-card" : (p.cardsVisible ? "small-card" : "hidden-card")}">
-    ${p.folded ? "🂠" : formatCardHtml(p.cards[0], p.cardsVisible)}
-  </div>
-  <div class="${p.folded ? "hidden-card" : (p.cardsVisible ? "small-card" : "hidden-card")}">
-    ${p.folded ? "🂠" : formatCardHtml(p.cards[1], p.cardsVisible)}
-  </div>
-</div>
+          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[0], p.cardsVisible)}</div>
+          <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[1], p.cardsVisible)}</div>
+        </div>
 
         ${lastActionHtml}
         <div class="player-extra">${roundBetInfo}</div>
