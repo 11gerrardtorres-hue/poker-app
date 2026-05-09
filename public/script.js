@@ -434,6 +434,7 @@ function renderState(state) {
     wrap.className = "player-seat";
 
     if (p.isMe) wrap.classList.add("me-seat");
+    if (p.cardsVisible) wrap.classList.add("cards-visible");
     if (p.isCurrentTurn) wrap.classList.add("current-turn");
     if (p.folded) wrap.classList.add("folded");
     if (winnerNames.includes(p.name)) wrap.classList.add("winner");
