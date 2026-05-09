@@ -98,13 +98,13 @@ function getSeatPositions(count) {
 
   if (isPortraitMobile) {
     const portraitMap = {
-      2: [{ left: 50, top: 88 }, { left: 50, top: 11 }],
-      3: [{ left: 50, top: 88 }, { left: 18, top: 18 }, { left: 82, top: 18 }],
-      4: [{ left: 50, top: 88 }, { left: 14, top: 38 }, { left: 14, top: 12 }, { left: 86, top: 12 }],
-      5: [{ left: 50, top: 88 }, { left: 14, top: 50 }, { left: 14, top: 22 }, { left: 50, top: 10 }, { left: 86, top: 22 }],
-      6: [{ left: 50, top: 88 }, { left: 14, top: 56 }, { left: 14, top: 32 }, { left: 14, top: 10 }, { left: 86, top: 10 }, { left: 86, top: 32 }],
-      7: [{ left: 50, top: 88 }, { left: 14, top: 58 }, { left: 14, top: 38 }, { left: 14, top: 18 }, { left: 50, top: 8 }, { left: 86, top: 18 }, { left: 86, top: 38 }],
-      8: [{ left: 50, top: 88 }, { left: 14, top: 60 }, { left: 14, top: 42 }, { left: 14, top: 24 }, { left: 32, top: 8 }, { left: 68, top: 8 }, { left: 86, top: 24 }, { left: 86, top: 42 }]
+      2: [{ left: 50, top: 84 }, { left: 50, top: 17 }],
+      3: [{ left: 50, top: 84 }, { left: 18, top: 22 }, { left: 82, top: 22 }],
+      4: [{ left: 50, top: 84 }, { left: 14, top: 43 }, { left: 18, top: 17 }, { left: 82, top: 17 }],
+      5: [{ left: 50, top: 84 }, { left: 14, top: 52 }, { left: 15, top: 27 }, { left: 50, top: 15 }, { left: 85, top: 27 }],
+      6: [{ left: 50, top: 84 }, { left: 14, top: 57 }, { left: 14, top: 35 }, { left: 18, top: 16 }, { left: 82, top: 16 }, { left: 86, top: 35 }],
+      7: [{ left: 50, top: 84 }, { left: 14, top: 58 }, { left: 14, top: 40 }, { left: 16, top: 22 }, { left: 50, top: 14 }, { left: 84, top: 22 }, { left: 86, top: 40 }],
+      8: [{ left: 50, top: 84 }, { left: 14, top: 59 }, { left: 14, top: 42 }, { left: 16, top: 25 }, { left: 32, top: 14 }, { left: 68, top: 14 }, { left: 84, top: 25 }, { left: 86, top: 42 }]
     };
     return portraitMap[count] || portraitMap[8];
   }
@@ -157,6 +157,7 @@ function updateRaiseUi(state) {
 }
 
 function updateLogPanelUi() {
+  if (!logPanel || !toggleLogPanelBtn) return;
   logPanel.classList.toggle("collapsed", isLogPanelCollapsed);
   toggleLogPanelBtn.textContent = isLogPanelCollapsed ? "펼치기" : "접기";
 }
@@ -230,6 +231,7 @@ function renderLogRow(entry, options = {}) {
 }
 
 function renderLogs(logs) {
+  if (!logBox) return;
   logBox.innerHTML = "";
 
   if (!logs || logs.length === 0) {
@@ -290,8 +292,8 @@ function updateCallButton(state) {
 
 function updateTurnBanner(state) {
   const turnName = state.currentTurnName || "-";
-  turnBox.textContent = `현재 턴: ${turnName}`;
-  turnBanner.textContent = `현재 턴: ${turnName}`;
+  if (turnBox) turnBox.textContent = `현재 턴: ${turnName}`;
+  if (turnBanner) turnBanner.textContent = `현재 턴: ${turnName}`;
 }
 
 function updateRoomInfo() {
@@ -407,9 +409,9 @@ function renderState(state) {
   updateRoomInfo();
   updateRevealModal(state);
 
-  potBox.textContent = `팟: ${formatNumber(state.pot)}`;
+  if (potBox) potBox.textContent = `팟: ${formatNumber(state.pot)}`;
   potCenterValue.textContent = formatNumber(state.pot);
-  streetBox.textContent = `단계: ${state.street}`;
+  if (streetBox) streetBox.textContent = `단계: ${state.street}`;
   resultBox.textContent = state.result || "";
 
   renderLogs(state.actionLogs);
@@ -515,10 +517,12 @@ raiseAmountInput.addEventListener("input", () => {
   setRaiseAmount(raiseAmountInput.value);
 });
 
-toggleLogPanelBtn.onclick = () => {
-  isLogPanelCollapsed = !isLogPanelCollapsed;
-  updateLogPanelUi();
-};
+if (toggleLogPanelBtn) {
+  toggleLogPanelBtn.onclick = () => {
+    isLogPanelCollapsed = !isLogPanelCollapsed;
+    updateLogPanelUi();
+  };
+}
 
 applySettingsBtn.onclick = () => {
   const startingChips = Number(startingChipsInput.value);
@@ -602,13 +606,13 @@ socket.on("roomInfo", (roomInfo) => {
   if (!roomInfo.inRoom) {
     playersLayer.innerHTML = "";
     resultBox.textContent = "";
-    potBox.textContent = "팟: 0";
+    if (potBox) potBox.textContent = "팟: 0";
     potCenterValue.textContent = "0";
-    turnBox.textContent = "현재 턴: -";
-    turnBanner.textContent = "현재 턴: -";
-    streetBox.textContent = "단계: 대기중";
+    if (turnBox) turnBox.textContent = "현재 턴: -";
+    if (turnBanner) turnBanner.textContent = "현재 턴: -";
+    if (streetBox) streetBox.textContent = "단계: 대기중";
     blindBox.textContent = `블라인드: ${formatNumber(roomInfo.settings.smallBlind)} / ${formatNumber(roomInfo.settings.bigBlind)}`;
-    logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
+    if (logBox) logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
     revealDecisionModal.classList.add("hidden");
 
     startBtn.disabled = true;

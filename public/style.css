@@ -176,7 +176,7 @@ body {
 
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr;
   gap: 12px;
   align-items: start;
 }
@@ -1354,6 +1354,301 @@ body {
   .bet-box input[type="range"]::-moz-range-thumb {
     width: 32px;
     height: 32px;
+  }
+}
+
+/* ===== 모바일 세로모드 컴팩트 테이블 ===== */
+@media (max-width: 900px) and (orientation: portrait) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-shell {
+    height: 100svh;
+    padding: max(5px, env(safe-area-inset-top)) 6px max(5px, env(safe-area-inset-bottom));
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  .topbar {
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .brand {
+    min-width: 82px;
+  }
+
+  .brand-title {
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .status-row {
+    flex: 1;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+
+  .status-chip {
+    padding: 5px 7px;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .room-panel {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .room-panel input,
+  .room-panel button,
+  .room-panel.join-panel button {
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    padding: 6px 5px;
+    border-radius: 8px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  #name,
+  #roomCodeInput {
+    grid-column: span 2;
+  }
+
+  #leaveRoomBtn {
+    grid-column: span 1;
+  }
+
+  #settingsPanel {
+    grid-template-columns: 1.1fr 0.8fr 0.8fr 1.3fr;
+  }
+
+  .main-layout {
+    flex: 1;
+    min-height: 0;
+    gap: 5px;
+  }
+
+  .table-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .table-card {
+    flex: 1;
+    min-height: 0;
+    padding: 5px;
+    border-radius: 14px;
+  }
+
+  .poker-table {
+    height: clamp(320px, calc(100svh - 294px), 430px);
+    min-height: 0;
+    border-width: 5px;
+    border-radius: 36px;
+  }
+
+  .players-layer {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .table-center {
+    width: 210px;
+    max-width: 58%;
+    top: 51%;
+  }
+
+  .pot-pill {
+    width: 96px;
+    margin-bottom: 5px;
+    padding: 4px 6px;
+  }
+
+  .pot-pill-label {
+    font-size: 8px;
+  }
+
+  .pot-pill-value {
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .community-block {
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .community-title {
+    display: none;
+  }
+
+  .community-cards {
+    gap: 3px;
+  }
+
+  .card-slot {
+    width: 29px;
+    height: 40px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .result-box {
+    margin-top: 4px;
+    min-height: 14px;
+    padding: 0 3px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .player-seat {
+    width: 94px;
+  }
+
+  .player-card {
+    padding: 5px 5px 6px;
+    border-radius: 10px;
+  }
+
+  .player-name {
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+
+  .player-chip-row,
+  .player-badges,
+  .player-cards,
+  .player-extra,
+  .player-delta,
+  .player-last-action,
+  .current-turn-badge,
+  .winner-badge {
+    margin-top: 2px;
+  }
+
+  .player-chip-pill {
+    min-height: 14px;
+    padding: 1px 5px;
+    font-size: 8px;
+  }
+
+  .badge {
+    padding: 1px 4px;
+    font-size: 7px;
+  }
+
+  .player-seat .small-card,
+  .player-seat .hidden-card {
+    width: 24px;
+    height: 33px;
+    border-radius: 5px;
+    font-size: 10px;
+  }
+
+  .current-turn-badge,
+  .winner-badge,
+  .player-last-action {
+    min-height: 13px;
+    padding: 1px 5px;
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .winner-crown {
+    width: 13px;
+    height: 13px;
+    font-size: 8px;
+  }
+
+  .player-extra,
+  .player-delta {
+    min-height: 10px;
+    font-size: 7px;
+  }
+
+  .control-card {
+    margin-top: 5px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .control-title {
+    display: none;
+  }
+
+  .bet-box {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 7px;
+    border-radius: 10px;
+  }
+
+  .bet-box label {
+    margin: 0;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .bet-value {
+    margin: 0;
+    min-width: 40px;
+    font-size: 11px;
+    text-align: right;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -8px;
+    border-width: 2px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-track {
+    height: 6px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-width: 2px;
+  }
+
+  .actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .actions button {
+    min-height: 36px;
+    padding: 6px 4px;
+    border-radius: 9px;
+    font-size: 10px;
+    line-height: 1.1;
+    box-shadow: none;
   }
 }
 
