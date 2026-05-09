@@ -11,6 +11,7 @@ app.use(express.static("public"));
 const DEFAULT_STARTING_CHIPS = 10000;
 const DEFAULT_SMALL_BLIND = 100;
 const DEFAULT_BIG_BLIND = 200;
+const REVEAL_DECISION_TIMEOUT_MS = 30000;
 
 const rankValues = {
   "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
@@ -54,6 +55,7 @@ function createRoomState(roomCode) {
     canRaiseIds: [],
     hiddenHandPlayerIds: [],
     revealDecision: null,
+    revealDecisionTimer: null,
     settings: {
       startingChips: DEFAULT_STARTING_CHIPS,
       smallBlind: DEFAULT_SMALL_BLIND,
@@ -403,6 +405,10 @@ function finalizeChipChangeTexts(room) {
 }
 
 function clearRevealDecision(room) {
+  if (room.revealDecisionTimer) {
+    clearTimeout(room.revealDecisionTimer);
+    room.revealDecisionTimer = null;
+  }
   room.revealDecision = null;
 }
 
@@ -416,6 +422,17 @@ function queueRevealDecision(room, playerId, type, message) {
     playerName: player.name,
     message
   };
+
+  room.revealDecisionTimer = setTimeout(() => {
+    if (
+      room.revealDecision &&
+      room.revealDecision.playerId === playerId &&
+      room.revealDecision.type === type
+    ) {
+      clearRevealDecision(room);
+      sendState(room);
+    }
+  }, REVEAL_DECISION_TIMEOUT_MS);
 
   if (!room.hiddenHandPlayerIds.includes(playerId)) {
     room.hiddenHandPlayerIds.push(playerId);
@@ -1172,18 +1189,25 @@ io.on("connection", (socket) => {
     const p = room.players[actorIndex];
     if (!p || p.folded) return;
 
-    const need = room.currentBet - p.roundBet;
-    if (need > p.chips) return;
-
+    const need = Math.max(room.currentBet - p.roundBet, 0);
+    const paid = Math.min(Math.max(need, 0), p.chips);
     const isCheck = need === 0;
+    const isAllInCall = need > paid;
 
-    p.chips -= need;
-    room.pot += need;
-    p.roundBet = room.currentBet;
-    p.totalCommitted += need;
+    p.chips -= paid;
+    room.pot += paid;
+    p.roundBet += paid;
+    p.totalCommitted += paid;
     p.actedSinceFullRaise = true;
 
-    pushLogEntry(room, isCheck ? `${p.name} 체크` : `${p.name} 콜 ${need}`);
+    pushLogEntry(
+      room,
+      isCheck
+        ? `${p.name} 체크`
+        : isAllInCall
+          ? `${p.name} 올인 ${p.roundBet} (콜)`
+          : `${p.name} 콜 ${paid}`
+    );
 
     removeFromQueues(room, p.id);
     maybeAdvanceRound(room);

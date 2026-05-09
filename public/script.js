@@ -258,7 +258,17 @@ function renderLogs(logs) {
 
 function updateCallButton(state) {
   const need = Math.max((state.currentBet || 0) - (state.myRoundBet || 0), 0);
-  callBtn.textContent = need === 0 ? "Check" : `Call ${formatNumber(need)}`;
+  if (need === 0) {
+    callBtn.textContent = "Check";
+    return;
+  }
+
+  if (need > (state.myChips || 0)) {
+    callBtn.textContent = `All-in Call ${formatNumber(state.myChips)}`;
+    return;
+  }
+
+  callBtn.textContent = `Call ${formatNumber(need)}`;
 }
 
 function updateTurnBanner(state) {
