@@ -1516,25 +1516,27 @@ body {
   }
 
   .player-seat {
-    width: 94px;
+    width: 82px;
   }
 
   .player-card {
-    padding: 5px 5px 6px;
-    border-radius: 10px;
+    padding: 4px 5px;
+    border-radius: 9px;
+    background: rgba(8, 16, 30, 0.88);
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
   .player-name {
-    max-width: 68px;
+    max-width: 56px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 1.1;
   }
 
   .player-chip-row,
   .player-badges,
-  .player-cards,
   .player-extra,
   .player-delta,
   .player-last-action,
@@ -1544,29 +1546,61 @@ body {
   }
 
   .player-chip-pill {
-    min-height: 14px;
-    padding: 1px 5px;
-    font-size: 8px;
+    min-height: 12px;
+    padding: 1px 4px;
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .player-badges {
+    min-height: 11px;
+    gap: 2px;
   }
 
   .badge {
-    padding: 1px 4px;
-    font-size: 7px;
+    padding: 1px 3px;
+    font-size: 6px;
+    line-height: 1;
+  }
+
+  .player-seat:not(.me-seat) .player-cards,
+  .player-seat:not(.me-seat) .player-extra,
+  .player-seat:not(.me-seat) .player-delta,
+  .player-seat:not(.winner) .winner-badge {
+    display: none;
+  }
+
+  .me-seat {
+    width: 96px;
+  }
+
+  .me-seat .player-card {
+    padding: 5px;
+  }
+
+  .me-seat .player-name {
+    max-width: 70px;
+    font-size: 9px;
+  }
+
+  .me-seat .player-cards {
+    margin-top: 3px;
+    gap: 4px;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 24px;
-    height: 33px;
+    width: 23px;
+    height: 32px;
     border-radius: 5px;
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .current-turn-badge,
   .winner-badge,
   .player-last-action {
-    min-height: 13px;
-    padding: 1px 5px;
+    min-height: 12px;
+    padding: 1px 4px;
     font-size: 7px;
     line-height: 1;
   }
@@ -1581,6 +1615,10 @@ body {
   .player-delta {
     min-height: 10px;
     font-size: 7px;
+  }
+
+  .folded .player-card {
+    opacity: 0.58;
   }
 
   .control-card {

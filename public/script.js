@@ -427,6 +427,7 @@ function renderState(state) {
     const wrap = document.createElement("div");
     wrap.className = "player-seat";
 
+    if (p.isMe) wrap.classList.add("me-seat");
     if (p.isCurrentTurn) wrap.classList.add("current-turn");
     if (p.folded) wrap.classList.add("folded");
     if (winnerNames.includes(p.name)) wrap.classList.add("winner");
