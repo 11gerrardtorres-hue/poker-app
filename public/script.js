@@ -58,6 +58,8 @@ const revealDecisionWaiting = document.getElementById("revealDecisionWaiting");
 const revealHandBtn = document.getElementById("revealHandBtn");
 const hideHandBtn = document.getElementById("hideHandBtn");
 
+const HEARTBEAT_INTERVAL_MS = 25000;
+
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
 let latestRoomInfo = {
@@ -434,6 +436,7 @@ function renderState(state) {
     wrap.className = "player-seat";
 
     if (p.isMe) wrap.classList.add("me-seat");
+    if (p.cardsVisible) wrap.classList.add("cards-visible");
     if (p.isCurrentTurn) wrap.classList.add("current-turn");
     if (p.folded) wrap.classList.add("folded");
     if (winnerNames.includes(p.name)) wrap.classList.add("winner");
@@ -654,6 +657,12 @@ socket.on("connect", () => {
 if (socket.connected) {
   socket.emit("resumeSession", { clientId });
 }
+
+setInterval(() => {
+  if (socket.connected) {
+    socket.emit("clientHeartbeat", { clientId, sentAt: Date.now() });
+  }
+}, HEARTBEAT_INTERVAL_MS);
 
 socket.on("state", (state) => {
   renderState(state);

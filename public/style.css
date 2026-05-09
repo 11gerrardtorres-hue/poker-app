@@ -1567,11 +1567,36 @@ body {
     line-height: 1;
   }
 
-  .player-seat:not(.me-seat) .player-cards,
-  .player-seat:not(.me-seat) .player-extra,
+  .player-seat:not(.me-seat):not(.cards-visible) .player-cards,
+  .player-seat:not(.me-seat):not(.cards-visible) .player-extra,
   .player-seat:not(.me-seat) .player-delta,
   .player-seat:not(.winner) .winner-badge {
     display: none;
+  }
+
+  .cards-visible:not(.me-seat) {
+    width: 86px;
+  }
+
+  .cards-visible:not(.me-seat) .player-card {
+    padding: 4px;
+    border-color: rgba(251, 191, 36, 0.22);
+  }
+
+  .cards-visible:not(.me-seat) .player-name {
+    max-width: 62px;
+  }
+
+  .cards-visible:not(.me-seat) .player-cards {
+    margin-top: 3px;
+    gap: 3px;
+  }
+
+  .cards-visible:not(.me-seat) .player-extra {
+    min-height: 0;
+    margin-top: 2px;
+    font-size: 6px;
+    line-height: 1.1;
   }
 
   .me-seat {
