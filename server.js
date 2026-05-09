@@ -12,6 +12,7 @@ const DEFAULT_STARTING_CHIPS = 10000;
 const DEFAULT_SMALL_BLIND = 100;
 const DEFAULT_BIG_BLIND = 200;
 const REVEAL_DECISION_TIMEOUT_MS = 30000;
+const DISCONNECTED_PLAYER_GRACE_MS = 45000;
 
 const rankValues = {
   "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
@@ -68,6 +69,11 @@ function getRoomBySocket(socketId) {
   const roomCode = socketRoomMap.get(socketId);
   if (!roomCode) return null;
   return rooms.get(roomCode) || null;
+}
+
+function normalizeClientId(clientId) {
+  const value = String(clientId || "").trim();
+  return value.length > 0 && value.length <= 80 ? value : "";
 }
 
 function createDeck() {
@@ -186,6 +192,20 @@ function orderedActionableIdsFrom(room, startIndex, excludeId = null) {
 function removeFromQueues(room, id) {
   room.mustActIds = room.mustActIds.filter((x) => x !== id);
   room.canRaiseIds = room.canRaiseIds.filter((x) => x !== id);
+}
+
+function replacePlayerId(room, oldId, newId) {
+  if (!oldId || oldId === newId) return;
+
+  if (room.hostId === oldId) room.hostId = newId;
+  room.lastWinnerIds = room.lastWinnerIds.map((id) => (id === oldId ? newId : id));
+  room.mustActIds = room.mustActIds.map((id) => (id === oldId ? newId : id));
+  room.canRaiseIds = room.canRaiseIds.map((id) => (id === oldId ? newId : id));
+  room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.map((id) => (id === oldId ? newId : id));
+
+  if (room.revealDecision?.playerId === oldId) {
+    room.revealDecision.playerId = newId;
+  }
 }
 
 function setCurrentTurnFromMustAct(room) {
@@ -986,50 +1006,40 @@ function cleanupRoomIfEmpty(roomCode) {
   if (room.players.length === 0) rooms.delete(roomCode);
 }
 
-function leaveCurrentRoom(socket) {
-  const roomCode = socketRoomMap.get(socket.id);
-  if (!roomCode) return;
+function removePlayerFromRoom(room, playerId) {
+  const removedIndex = room.players.findIndex((p) => p.id === playerId);
+  if (removedIndex === -1) return;
 
-  const room = rooms.get(roomCode);
-  socket.leave(roomCode);
-  socketRoomMap.delete(socket.id);
-
-  if (!room) {
-    sendRoomInfo(socket, null);
-    return;
+  const removedPlayer = room.players[removedIndex];
+  if (removedPlayer.disconnectTimer) {
+    clearTimeout(removedPlayer.disconnectTimer);
+    removedPlayer.disconnectTimer = null;
   }
 
-  if (room.revealDecision && room.revealDecision.playerId === socket.id) {
+  if (room.revealDecision && room.revealDecision.playerId === playerId) {
     clearRevealDecision(room);
   }
 
-  room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== socket.id);
-
-  const removedIndex = room.players.findIndex((p) => p.id === socket.id);
-
-  room.mustActIds = room.mustActIds.filter((id) => id !== socket.id);
-  room.canRaiseIds = room.canRaiseIds.filter((id) => id !== socket.id);
-  room.players = room.players.filter((p) => p.id !== socket.id);
+  room.hiddenHandPlayerIds = room.hiddenHandPlayerIds.filter((id) => id !== playerId);
+  room.mustActIds = room.mustActIds.filter((id) => id !== playerId);
+  room.canRaiseIds = room.canRaiseIds.filter((id) => id !== playerId);
+  room.players.splice(removedIndex, 1);
 
   if (room.players.length === 0) {
-    cleanupRoomIfEmpty(roomCode);
-    sendRoomInfo(socket, null);
+    cleanupRoomIfEmpty(room.roomCode);
     return;
   }
 
-  if (room.hostId === socket.id) {
+  if (room.hostId === playerId) {
     room.hostId = room.players[0].id;
   }
 
-  if (removedIndex !== -1) {
-    if (room.dealerIndex > removedIndex) room.dealerIndex -= 1;
-    else if (room.dealerIndex === removedIndex) room.dealerIndex = room.dealerIndex % room.players.length;
-  }
+  if (room.dealerIndex > removedIndex) room.dealerIndex -= 1;
+  else if (room.dealerIndex === removedIndex) room.dealerIndex = room.dealerIndex % room.players.length;
 
   if (activePlayers(room).length === 1 && room.pot > 0) {
     showdown(room, "fold_win");
     sendState(room);
-    sendRoomInfo(socket, null);
     return;
   }
 
@@ -1038,14 +1048,92 @@ function leaveCurrentRoom(socket) {
   }
 
   sendState(room);
-  sendRoomInfo(socket, null);
+}
+
+function leaveCurrentRoom(socket, { notifySocket = true } = {}) {
+  const roomCode = socketRoomMap.get(socket.id);
+  if (!roomCode) return;
+
+  const room = rooms.get(roomCode);
+  socket.leave(roomCode);
+  socketRoomMap.delete(socket.id);
+
+  if (!room) {
+    if (notifySocket) sendRoomInfo(socket, null);
+    return;
+  }
+
+  removePlayerFromRoom(room, socket.id);
+  if (notifySocket) sendRoomInfo(socket, null);
+}
+
+function markPlayerDisconnected(socket) {
+  const roomCode = socketRoomMap.get(socket.id);
+  if (!roomCode) return;
+
+  const room = rooms.get(roomCode);
+  socketRoomMap.delete(socket.id);
+  if (!room) return;
+
+  const player = getPlayerById(room, socket.id);
+  if (!player) return;
+
+  player.connected = false;
+  if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
+  player.disconnectTimer = setTimeout(() => {
+    const latestRoom = rooms.get(roomCode);
+    const latestPlayer = latestRoom ? getPlayerById(latestRoom, player.id) : null;
+    if (!latestRoom || !latestPlayer || latestPlayer.connected) return;
+    removePlayerFromRoom(latestRoom, latestPlayer.id);
+  }, DISCONNECTED_PLAYER_GRACE_MS);
+
+  sendState(room);
+}
+
+function resumeSession(socket, clientId) {
+  const normalizedClientId = normalizeClientId(clientId);
+  if (!normalizedClientId) return false;
+
+  for (const room of rooms.values()) {
+    const player = room.players.find((p) => p.clientId === normalizedClientId);
+    if (!player) continue;
+
+    const oldId = player.id;
+    const oldSocket = io.sockets.sockets.get(oldId);
+    if (oldSocket && oldSocket.id !== socket.id) {
+      oldSocket.leave(room.roomCode);
+      socketRoomMap.delete(oldSocket.id);
+    }
+
+    if (player.disconnectTimer) {
+      clearTimeout(player.disconnectTimer);
+      player.disconnectTimer = null;
+    }
+
+    replacePlayerId(room, oldId, socket.id);
+    player.id = socket.id;
+    player.connected = true;
+    socket.join(room.roomCode);
+    socketRoomMap.set(socket.id, room.roomCode);
+    sendState(room);
+    return true;
+  }
+
+  return false;
 }
 
 io.on("connection", (socket) => {
   sendRoomInfo(socket, null);
 
-  socket.on("createRoom", ({ name }) => {
+  socket.on("resumeSession", ({ clientId }) => {
+    if (!resumeSession(socket, clientId)) {
+      sendRoomInfo(socket, null);
+    }
+  });
+
+  socket.on("createRoom", ({ name, clientId }) => {
     const trimmedName = String(name || "").trim();
+    const normalizedClientId = normalizeClientId(clientId);
     if (!trimmedName) return;
 
     leaveCurrentRoom(socket);
@@ -1059,7 +1147,10 @@ io.on("connection", (socket) => {
 
     room.players.push({
       id: socket.id,
+      clientId: normalizedClientId,
       name: trimmedName,
+      connected: true,
+      disconnectTimer: null,
       chips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
@@ -1079,8 +1170,9 @@ io.on("connection", (socket) => {
     sendState(room);
   });
 
-  socket.on("joinRoom", ({ roomCode, name }) => {
+  socket.on("joinRoom", ({ roomCode, name, clientId }) => {
     const trimmedName = String(name || "").trim();
+    const normalizedClientId = normalizeClientId(clientId);
     const normalizedCode = String(roomCode || "").trim().toUpperCase();
     if (!trimmedName || !normalizedCode) return;
 
@@ -1092,9 +1184,32 @@ io.on("connection", (socket) => {
 
     leaveCurrentRoom(socket);
 
+    const existingPlayer = normalizedClientId
+      ? room.players.find((p) => p.clientId === normalizedClientId)
+      : null;
+
+    if (existingPlayer) {
+      const oldId = existingPlayer.id;
+      replacePlayerId(room, oldId, socket.id);
+      existingPlayer.id = socket.id;
+      existingPlayer.name = trimmedName;
+      existingPlayer.connected = true;
+      if (existingPlayer.disconnectTimer) {
+        clearTimeout(existingPlayer.disconnectTimer);
+        existingPlayer.disconnectTimer = null;
+      }
+      socket.join(normalizedCode);
+      socketRoomMap.set(socket.id, normalizedCode);
+      sendState(room);
+      return;
+    }
+
     room.players.push({
       id: socket.id,
+      clientId: normalizedClientId,
       name: trimmedName,
+      connected: true,
+      disconnectTimer: null,
       chips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
@@ -1338,7 +1453,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    leaveCurrentRoom(socket);
+    markPlayerDisconnected(socket);
   });
 });
 

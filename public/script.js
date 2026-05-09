@@ -1,4 +1,21 @@
 const socket = io();
+const CLIENT_ID_STORAGE_KEY = "pokerAppClientId";
+
+function createClientId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getClientId() {
+  let clientId = localStorage.getItem(CLIENT_ID_STORAGE_KEY);
+  if (!clientId) {
+    clientId = createClientId();
+    localStorage.setItem(CLIENT_ID_STORAGE_KEY, clientId);
+  }
+  return clientId;
+}
+
+const clientId = getClientId();
 
 const createRoomBtn = document.getElementById("createRoomBtn");
 const joinRoomBtn = document.getElementById("joinRoomBtn");
@@ -542,7 +559,7 @@ createRoomBtn.onclick = () => {
     alert("이름을 입력하세요");
     return;
   }
-  socket.emit("createRoom", { name });
+  socket.emit("createRoom", { name, clientId });
 };
 
 joinRoomBtn.onclick = () => {
@@ -558,7 +575,7 @@ joinRoomBtn.onclick = () => {
     return;
   }
 
-  socket.emit("joinRoom", { roomCode, name });
+  socket.emit("joinRoom", { roomCode, name, clientId });
 };
 
 leaveRoomBtn.onclick = () => {
@@ -618,6 +635,14 @@ socket.on("roomInfo", (roomInfo) => {
 socket.on("joinRoomError", (message) => {
   alert(message);
 });
+
+socket.on("connect", () => {
+  socket.emit("resumeSession", { clientId });
+});
+
+if (socket.connected) {
+  socket.emit("resumeSession", { clientId });
+}
 
 socket.on("state", (state) => {
   renderState(state);
