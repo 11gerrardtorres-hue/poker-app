@@ -813,7 +813,7 @@ function startHand(room, resetStacks) {
 
   if (resetStacks) {
     room.players.forEach((p) => {
-      p.chips = room.settings.startingChips;
+      p.chips = p.startingChips || room.settings.startingChips;
     });
   }
 
@@ -980,6 +980,7 @@ function sendState(room) {
           id: p.id,
           name: p.name,
           chips: p.chips,
+          startingChips: p.startingChips || room.settings.startingChips,
           folded: p.folded,
           isCurrentTurn: room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === p.id,
           isMe: p.id === meId,
@@ -1161,6 +1162,7 @@ io.on("connection", (socket) => {
       connected: true,
       disconnectTimer: null,
       chips: room.settings.startingChips,
+      startingChips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
       roundBet: 0,
@@ -1220,6 +1222,7 @@ io.on("connection", (socket) => {
       connected: true,
       disconnectTimer: null,
       chips: room.settings.startingChips,
+      startingChips: room.settings.startingChips,
       cards: ["?", "?"],
       folded: false,
       roundBet: 0,
@@ -1243,14 +1246,27 @@ io.on("connection", (socket) => {
     if (!room) return;
     if (room.hostId !== socket.id) return;
     if (room.revealDecision) return;
-    if (room.street !== "대기중" && room.street !== "리버완료") return;
+    if (room.street !== "대기중") return;
 
     room.settings = sanitizeSettings(incomingSettings, room.settings);
 
     if (room.street === "대기중") {
       room.players.forEach((p) => {
-        p.chips = room.settings.startingChips;
-        p.startChips = room.settings.startingChips;
+        p.startingChips = room.settings.startingChips;
+      });
+
+      if (Array.isArray(incomingSettings?.playerStartingChips)) {
+        incomingSettings.playerStartingChips.forEach((entry) => {
+          const player = room.players.find((p) => p.id === entry?.playerId);
+          const chips = Number(entry?.chips);
+          if (!player || !Number.isFinite(chips)) return;
+          player.startingChips = Math.max(1000, Math.floor(chips));
+        });
+      }
+
+      room.players.forEach((p) => {
+        p.chips = p.startingChips;
+        p.startChips = p.startingChips;
       });
     }
 

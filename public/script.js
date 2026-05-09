@@ -49,6 +49,7 @@ const raiseAmountText = document.getElementById("raiseAmountText");
 const startingChipsInput = document.getElementById("startingChipsInput");
 const smallBlindInput = document.getElementById("smallBlindInput");
 const bigBlindInput = document.getElementById("bigBlindInput");
+const playerChipSettings = document.getElementById("playerChipSettings");
 
 const revealDecisionModal = document.getElementById("revealDecisionModal");
 const revealDecisionTitle = document.getElementById("revealDecisionTitle");
@@ -318,12 +319,42 @@ function updateSettingsControls(state) {
   const inRoom = latestRoomInfo.inRoom;
   const isHost = latestRoomInfo.isHost;
   const pendingReveal = !!state.revealDecision?.pending;
-  const canEdit = inRoom && isHost && !pendingReveal && (state.street === "대기중" || state.street === "리버완료");
+  const canEdit = inRoom && isHost && !pendingReveal && state.street === "대기중";
 
   startingChipsInput.disabled = !canEdit;
   smallBlindInput.disabled = !canEdit;
   bigBlindInput.disabled = !canEdit;
   applySettingsBtn.disabled = !canEdit;
+}
+
+function renderPlayerChipSettings(state) {
+  if (!playerChipSettings) return;
+
+  const canEdit =
+    latestRoomInfo.inRoom &&
+    latestRoomInfo.isHost &&
+    !state.revealDecision?.pending &&
+    state.street === "대기중";
+
+  playerChipSettings.classList.toggle("hidden", !canEdit);
+  if (!canEdit) {
+    playerChipSettings.innerHTML = "";
+    return;
+  }
+
+  playerChipSettings.innerHTML = state.players.map((player) => `
+    <label class="player-chip-setting">
+      <span>${player.name}</span>
+      <input
+        class="player-starting-chip-input"
+        data-player-id="${player.id}"
+        type="number"
+        min="1000"
+        step="100"
+        value="${player.startingChips || player.chips}"
+      >
+    </label>
+  `).join("");
 }
 
 function updateBottomButtons(state) {
@@ -410,6 +441,7 @@ function renderState(state) {
   updateLogPanelUi();
   updateRoomInfo();
   updateRevealModal(state);
+  renderPlayerChipSettings(state);
 
   if (potBox) potBox.textContent = `팟: ${formatNumber(state.pot)}`;
   potCenterValue.textContent = formatNumber(state.pot);
@@ -538,6 +570,10 @@ applySettingsBtn.onclick = () => {
   const startingChips = Number(startingChipsInput.value);
   const smallBlind = Number(smallBlindInput.value);
   const bigBlind = Number(bigBlindInput.value);
+  const playerStartingChips = [...document.querySelectorAll(".player-starting-chip-input")].map((input) => ({
+    playerId: input.dataset.playerId,
+    chips: Number(input.value)
+  }));
 
   if (!Number.isFinite(startingChips) || startingChips < 1000) {
     alert("시작칩은 1000 이상이어야 합니다");
@@ -551,8 +587,12 @@ applySettingsBtn.onclick = () => {
     alert("BB는 SB 이상이어야 합니다");
     return;
   }
+  if (playerStartingChips.some((entry) => !Number.isFinite(entry.chips) || entry.chips < 1000)) {
+    alert("각 플레이어 시작칩은 1000 이상이어야 합니다");
+    return;
+  }
 
-  socket.emit("updateSettings", { startingChips, smallBlind, bigBlind });
+  socket.emit("updateSettings", { startingChips, smallBlind, bigBlind, playerStartingChips });
 };
 
 revealHandBtn.onclick = () => {
@@ -643,6 +683,10 @@ socket.on("roomInfo", (roomInfo) => {
     smallBlindInput.disabled = true;
     bigBlindInput.disabled = true;
     applySettingsBtn.disabled = true;
+    if (playerChipSettings) {
+      playerChipSettings.classList.add("hidden");
+      playerChipSettings.innerHTML = "";
+    }
   }
 });
 
