@@ -58,6 +58,8 @@ const revealDecisionWaiting = document.getElementById("revealDecisionWaiting");
 const revealHandBtn = document.getElementById("revealHandBtn");
 const hideHandBtn = document.getElementById("hideHandBtn");
 
+const HEARTBEAT_INTERVAL_MS = 25000;
+
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
 let latestRoomInfo = {
@@ -655,6 +657,12 @@ socket.on("connect", () => {
 if (socket.connected) {
   socket.emit("resumeSession", { clientId });
 }
+
+setInterval(() => {
+  if (socket.connected) {
+    socket.emit("clientHeartbeat", { clientId, sentAt: Date.now() });
+  }
+}, HEARTBEAT_INTERVAL_MS);
 
 socket.on("state", (state) => {
   renderState(state);

@@ -1131,6 +1131,15 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("clientHeartbeat", ({ clientId, sentAt }) => {
+    socket.emit("serverHeartbeat", {
+      ok: true,
+      clientId: normalizeClientId(clientId),
+      sentAt,
+      receivedAt: Date.now()
+    });
+  });
+
   socket.on("createRoom", ({ name, clientId }) => {
     const trimmedName = String(name || "").trim();
     const normalizedClientId = normalizeClientId(clientId);
