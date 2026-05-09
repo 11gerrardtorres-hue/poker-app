@@ -1516,22 +1516,26 @@ body {
   }
 
   .player-seat {
-    width: 82px;
+    width: 70px;
   }
 
   .player-card {
-    padding: 4px 5px;
-    border-radius: 9px;
+    padding: 3px 4px;
+    border-radius: 8px;
     background: rgba(8, 16, 30, 0.88);
     border-color: rgba(255, 255, 255, 0.14);
   }
 
+  .player-card::after {
+    display: none;
+  }
+
   .player-name {
-    max-width: 56px;
+    max-width: 48px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 8px;
+    font-size: 7px;
     line-height: 1.1;
   }
 
@@ -1546,19 +1550,19 @@ body {
   }
 
   .player-chip-pill {
-    min-height: 12px;
-    padding: 1px 4px;
-    font-size: 7px;
+    min-height: 11px;
+    padding: 1px 3px;
+    font-size: 6px;
     line-height: 1;
   }
 
   .player-badges {
-    min-height: 11px;
+    min-height: 9px;
     gap: 2px;
   }
 
   .badge {
-    padding: 1px 3px;
+    padding: 1px 2px;
     font-size: 6px;
     line-height: 1;
   }
@@ -1571,16 +1575,23 @@ body {
   }
 
   .me-seat {
-    width: 96px;
+    width: 100px;
   }
 
   .me-seat .player-card {
     padding: 5px;
+    background: rgba(12, 25, 45, 0.94);
+    border-color: rgba(251, 191, 36, 0.26);
   }
 
   .me-seat .player-name {
     max-width: 70px;
     font-size: 9px;
+  }
+
+  .me-seat .player-chip-pill {
+    min-height: 13px;
+    font-size: 8px;
   }
 
   .me-seat .player-cards {
@@ -1599,9 +1610,9 @@ body {
   .current-turn-badge,
   .winner-badge,
   .player-last-action {
-    min-height: 12px;
-    padding: 1px 4px;
-    font-size: 7px;
+    min-height: 10px;
+    padding: 1px 3px;
+    font-size: 6px;
     line-height: 1;
   }
 
