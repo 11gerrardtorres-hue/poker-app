@@ -418,11 +418,17 @@ function renderState(state) {
 
   playersLayer.innerHTML = "";
 
-  const positions = getSeatPositions(state.players.length);
+  const orderedPlayers = [...state.players];
+  const meIndex = orderedPlayers.findIndex((p) => p.isMe);
+  if (meIndex > 0) {
+    orderedPlayers.push(...orderedPlayers.splice(0, meIndex));
+  }
+
+  const positions = getSeatPositions(orderedPlayers.length);
   const winnerNames = state.winnerNames || [];
   const latestPlayerActions = getLatestPlayerActions(state.actionLogs);
 
-  state.players.forEach((p, index) => {
+  orderedPlayers.forEach((p, index) => {
     const seat = positions[index];
     const wrap = document.createElement("div");
     wrap.className = "player-seat";
