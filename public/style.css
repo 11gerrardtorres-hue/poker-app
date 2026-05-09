@@ -174,6 +174,47 @@ body {
   cursor: default;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.player-chip-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 6px;
+}
+
+.player-chip-setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
+
+.player-chip-setting span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.player-chip-setting input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 7px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  outline: none;
+  font-size: 12px;
+}
+
 .main-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -1433,6 +1474,28 @@ body {
 
   #settingsPanel {
     grid-template-columns: 1.1fr 0.8fr 0.8fr 1.3fr;
+  }
+
+  .player-chip-settings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .player-chip-setting {
+    grid-template-columns: minmax(0, 1fr) 62px;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 8px;
+  }
+
+  .player-chip-setting span,
+  .player-chip-setting input {
+    font-size: 9px;
+  }
+
+  .player-chip-setting input {
+    padding: 4px 5px;
+    border-radius: 6px;
   }
 
   .main-layout {
