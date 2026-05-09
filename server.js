@@ -973,7 +973,7 @@ function sendState(room) {
       revealDecision: revealDecisionPayloadForSocket(room, meId),
       players: room.players.map((p, i) => {
         const hiddenForOthers = room.hiddenHandPlayerIds.includes(p.id) && p.id !== meId;
-        const visibleAtShowdown = room.street === "리버완료" && !hiddenForOthers;
+        const visibleAtShowdown = !p.folded && room.street === "리버완료" && !hiddenForOthers;
         const cardsVisible = p.id === meId || visibleAtShowdown;
 
         return {

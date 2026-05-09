@@ -98,13 +98,13 @@ function getSeatPositions(count) {
 
   if (isPortraitMobile) {
     const portraitMap = {
-      2: [{ left: 50, top: 84 }, { left: 50, top: 17 }],
-      3: [{ left: 50, top: 84 }, { left: 18, top: 22 }, { left: 82, top: 22 }],
-      4: [{ left: 50, top: 84 }, { left: 14, top: 43 }, { left: 18, top: 17 }, { left: 82, top: 17 }],
-      5: [{ left: 50, top: 84 }, { left: 14, top: 52 }, { left: 15, top: 27 }, { left: 50, top: 15 }, { left: 85, top: 27 }],
-      6: [{ left: 50, top: 84 }, { left: 14, top: 57 }, { left: 14, top: 35 }, { left: 18, top: 16 }, { left: 82, top: 16 }, { left: 86, top: 35 }],
-      7: [{ left: 50, top: 84 }, { left: 14, top: 58 }, { left: 14, top: 40 }, { left: 16, top: 22 }, { left: 50, top: 14 }, { left: 84, top: 22 }, { left: 86, top: 40 }],
-      8: [{ left: 50, top: 84 }, { left: 14, top: 59 }, { left: 14, top: 42 }, { left: 16, top: 25 }, { left: 32, top: 14 }, { left: 68, top: 14 }, { left: 84, top: 25 }, { left: 86, top: 42 }]
+      2: [{ left: 50, top: 86 }, { left: 50, top: 14 }],
+      3: [{ left: 50, top: 86 }, { left: 12, top: 27 }, { left: 88, top: 27 }],
+      4: [{ left: 50, top: 86 }, { left: 11, top: 47 }, { left: 26, top: 13 }, { left: 74, top: 13 }],
+      5: [{ left: 50, top: 86 }, { left: 11, top: 52 }, { left: 12, top: 24 }, { left: 50, top: 12 }, { left: 88, top: 24 }],
+      6: [{ left: 50, top: 86 }, { left: 11, top: 56 }, { left: 11, top: 33 }, { left: 24, top: 12 }, { left: 76, top: 12 }, { left: 89, top: 33 }],
+      7: [{ left: 50, top: 86 }, { left: 11, top: 58 }, { left: 11, top: 39 }, { left: 12, top: 21 }, { left: 50, top: 11 }, { left: 88, top: 21 }, { left: 89, top: 39 }],
+      8: [{ left: 50, top: 86 }, { left: 11, top: 59 }, { left: 11, top: 42 }, { left: 12, top: 25 }, { left: 31, top: 11 }, { left: 69, top: 11 }, { left: 88, top: 25 }, { left: 89, top: 42 }]
     };
     return portraitMap[count] || portraitMap[8];
   }
@@ -418,15 +418,22 @@ function renderState(state) {
 
   playersLayer.innerHTML = "";
 
-  const positions = getSeatPositions(state.players.length);
+  const orderedPlayers = [...state.players];
+  const meIndex = orderedPlayers.findIndex((p) => p.isMe);
+  if (meIndex > 0) {
+    orderedPlayers.push(...orderedPlayers.splice(0, meIndex));
+  }
+
+  const positions = getSeatPositions(orderedPlayers.length);
   const winnerNames = state.winnerNames || [];
   const latestPlayerActions = getLatestPlayerActions(state.actionLogs);
 
-  state.players.forEach((p, index) => {
+  orderedPlayers.forEach((p, index) => {
     const seat = positions[index];
     const wrap = document.createElement("div");
     wrap.className = "player-seat";
 
+    if (p.isMe) wrap.classList.add("me-seat");
     if (p.isCurrentTurn) wrap.classList.add("current-turn");
     if (p.folded) wrap.classList.add("folded");
     if (winnerNames.includes(p.name)) wrap.classList.add("winner");
