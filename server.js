@@ -8,6 +8,10 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ ok: true, now: Date.now() });
+});
+
 const DEFAULT_STARTING_CHIPS = 10000;
 const DEFAULT_SMALL_BLIND = 100;
 const DEFAULT_BIG_BLIND = 200;
