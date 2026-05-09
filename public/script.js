@@ -77,6 +77,17 @@ let latestRoomInfo = {
 };
 let isLogPanelCollapsed = false;
 
+function sendKeepAlive() {
+  if (socket.connected) {
+    socket.emit("clientHeartbeat", { clientId, sentAt: Date.now() });
+  }
+
+  fetch(`/healthz?t=${Date.now()}`, {
+    cache: "no-store",
+    keepalive: true
+  }).catch(() => {});
+}
+
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("ko-KR");
 }
@@ -697,17 +708,21 @@ socket.on("joinRoomError", (message) => {
 
 socket.on("connect", () => {
   socket.emit("resumeSession", { clientId });
+  sendKeepAlive();
 });
 
 if (socket.connected) {
   socket.emit("resumeSession", { clientId });
+  sendKeepAlive();
 }
 
-setInterval(() => {
-  if (socket.connected) {
-    socket.emit("clientHeartbeat", { clientId, sentAt: Date.now() });
+setInterval(sendKeepAlive, HEARTBEAT_INTERVAL_MS);
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    sendKeepAlive();
   }
-}, HEARTBEAT_INTERVAL_MS);
+});
 
 socket.on("state", (state) => {
   renderState(state);
