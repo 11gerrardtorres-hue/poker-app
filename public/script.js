@@ -425,10 +425,11 @@ function renderState(state) {
     else if (p.isDealer) positionBadge = `<span class="badge dealer">D</span>`;
     else if (p.positionLabel) positionBadge = `<span class="badge">${p.positionLabel}</span>`;
 
-    const handInfo = p.handName || "";
-    const potWinInfo = p.potWinText || "";
+    const showSeatResultDetails = state.street !== "리버완료";
+    const handInfo = showSeatResultDetails ? p.handName || "" : "";
+    const potWinInfo = showSeatResultDetails ? p.potWinText || "" : "";
     const roundBetInfo = p.roundBetText || "";
-    const chipChange = p.chipChangeText || "";
+    const chipChange = showSeatResultDetails ? p.chipChangeText || "" : "";
     const chipColor =
       p.chipChangeValue > 0 ? "#86efac" :
       p.chipChangeValue < 0 ? "#fca5a5" :
