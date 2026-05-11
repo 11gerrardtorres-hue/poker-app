@@ -835,17 +835,19 @@ body {
 @media (max-width: 950px) and (orientation: landscape) {
   html,
   body {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .app-shell {
     width: 100%;
-    height: 100svh;
+    min-height: 100svh;
+    height: auto;
     margin: 0;
     padding: max(5px, env(safe-area-inset-top)) 6px max(5px, env(safe-area-inset-bottom));
     gap: 5px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .topbar {
@@ -956,7 +958,7 @@ body {
   }
 
   .poker-table {
-    height: clamp(220px, calc(100svh - 224px), 310px);
+    height: clamp(210px, calc(100svh - 218px), 286px);
     min-height: 0;
     border-width: 5px;
     border-radius: 36px;
@@ -968,9 +970,9 @@ body {
   }
 
   .table-center {
-    width: 210px;
-    max-width: 58%;
-    top: 51%;
+    width: 190px;
+    max-width: 54%;
+    top: 47%;
   }
 
   .pot-pill {
@@ -1027,8 +1029,8 @@ body {
   }
 
   .card-slot {
-    width: 29px;
-    height: 40px;
+    width: 27px;
+    height: 37px;
     border-radius: 6px;
     font-size: 11px;
   }
@@ -1126,7 +1128,7 @@ body {
   }
 
   .me-seat {
-    width: 88px;
+    width: 82px;
   }
 
   .me-seat .player-card {
@@ -1136,7 +1138,7 @@ body {
   }
 
   .me-seat .player-name {
-    max-width: 62px;
+    max-width: 56px;
     font-size: 8px;
   }
 
@@ -1165,8 +1167,8 @@ body {
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 21px;
-    height: 29px;
+    width: 20px;
+    height: 27px;
     border-radius: 5px;
     font-size: 8px;
   }
@@ -2040,5 +2042,35 @@ body {
     min-height: 50px;
     font-size: 13px;
     border-radius: 14px;
+  }
+}
+
+@media (max-width: 950px) and (orientation: landscape) {
+  .actions {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .actions button {
+    min-height: 34px;
+    padding: 5px 4px;
+    border-radius: 9px;
+    font-size: 10px;
+    line-height: 1.1;
+    box-shadow: none;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -8px;
+    border-width: 2px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-width: 2px;
   }
 }
