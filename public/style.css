@@ -1450,8 +1450,12 @@ body {
 
   .room-panel {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .room-entry-panel {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .room-panel input,
@@ -1468,15 +1472,21 @@ body {
 
   #name,
   #roomCodeInput {
+    grid-column: span 3;
+  }
+
+  #createRoomBtn,
+  #joinRoomBtn,
+  #leaveRoomBtn {
     grid-column: span 2;
   }
 
   #leaveRoomBtn {
-    grid-column: span 1;
+    grid-column: span 2;
   }
 
   #settingsPanel {
-    grid-template-columns: 1.1fr 0.8fr 0.8fr 1.3fr;
+    grid-template-columns: 1fr 1fr 1.2fr;
   }
 
   .player-chip-settings {

@@ -46,7 +46,6 @@ const roomCodeInput = document.getElementById("roomCodeInput");
 const raiseAmountInput = document.getElementById("raiseAmount");
 const raiseAmountText = document.getElementById("raiseAmountText");
 
-const startingChipsInput = document.getElementById("startingChipsInput");
 const smallBlindInput = document.getElementById("smallBlindInput");
 const bigBlindInput = document.getElementById("bigBlindInput");
 const playerChipSettings = document.getElementById("playerChipSettings");
@@ -321,7 +320,6 @@ function updateRoomInfo() {
   roomInfoBox.textContent = `방: ${latestRoomInfo.roomCode} (${latestRoomInfo.playerCount}명${hostText})`;
   blindBox.textContent = `블라인드: ${formatNumber(latestRoomInfo.settings.smallBlind)} / ${formatNumber(latestRoomInfo.settings.bigBlind)}`;
 
-  startingChipsInput.value = latestRoomInfo.settings.startingChips;
   smallBlindInput.value = latestRoomInfo.settings.smallBlind;
   bigBlindInput.value = latestRoomInfo.settings.bigBlind;
 }
@@ -332,7 +330,6 @@ function updateSettingsControls(state) {
   const pendingReveal = !!state.revealDecision?.pending;
   const canEdit = inRoom && isHost && !pendingReveal && state.street === "대기중";
 
-  startingChipsInput.disabled = !canEdit;
   smallBlindInput.disabled = !canEdit;
   bigBlindInput.disabled = !canEdit;
   applySettingsBtn.disabled = !canEdit;
@@ -579,7 +576,6 @@ if (toggleLogPanelBtn) {
 }
 
 applySettingsBtn.onclick = () => {
-  const startingChips = Number(startingChipsInput.value);
   const smallBlind = Number(smallBlindInput.value);
   const bigBlind = Number(bigBlindInput.value);
   const playerStartingChips = [...document.querySelectorAll(".player-starting-chip-input")].map((input) => ({
@@ -587,10 +583,6 @@ applySettingsBtn.onclick = () => {
     chips: Number(input.value)
   }));
 
-  if (!Number.isFinite(startingChips) || startingChips < 1000) {
-    alert("시작칩은 1000 이상이어야 합니다");
-    return;
-  }
   if (!Number.isFinite(smallBlind) || smallBlind < 1) {
     alert("SB는 1 이상이어야 합니다");
     return;
@@ -604,7 +596,7 @@ applySettingsBtn.onclick = () => {
     return;
   }
 
-  socket.emit("updateSettings", { startingChips, smallBlind, bigBlind, playerStartingChips });
+  socket.emit("updateSettings", { smallBlind, bigBlind, playerStartingChips });
 };
 
 revealHandBtn.onclick = () => {
@@ -687,11 +679,9 @@ socket.on("roomInfo", (roomInfo) => {
     showdownBtn.textContent = "다음 게임";
     raiseAmountInput.disabled = true;
 
-    startingChipsInput.value = roomInfo.settings.startingChips;
     smallBlindInput.value = roomInfo.settings.smallBlind;
     bigBlindInput.value = roomInfo.settings.bigBlind;
 
-    startingChipsInput.disabled = true;
     smallBlindInput.disabled = true;
     bigBlindInput.disabled = true;
     applySettingsBtn.disabled = true;
