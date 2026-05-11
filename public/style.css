@@ -1545,9 +1545,9 @@ body {
   }
 
   .table-center {
-    width: 210px;
-    max-width: 58%;
-    top: 51%;
+    width: 190px;
+    max-width: 54%;
+    top: 48%;
   }
 
   .pot-pill {
@@ -1604,8 +1604,8 @@ body {
   }
 
   .card-slot {
-    width: 29px;
-    height: 40px;
+    width: 27px;
+    height: 37px;
     border-radius: 6px;
     font-size: 11px;
   }
@@ -1703,7 +1703,7 @@ body {
   }
 
   .me-seat {
-    width: 88px;
+    width: 82px;
   }
 
   .me-seat .player-card {
@@ -1713,7 +1713,7 @@ body {
   }
 
   .me-seat .player-name {
-    max-width: 62px;
+    max-width: 56px;
     font-size: 8px;
   }
 
@@ -1742,8 +1742,8 @@ body {
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 21px;
-    height: 29px;
+    width: 20px;
+    height: 27px;
     border-radius: 5px;
     font-size: 8px;
   }

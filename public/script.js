@@ -112,7 +112,7 @@ function getSeatPositions(count) {
     window.innerWidth <= 950 && window.innerHeight < window.innerWidth;
 
   if (isPortraitMobile) {
-    const seats = [{ left: 50, top: 81 }];
+    const seats = [{ left: 50, top: 80 }];
     const opponentCount = Math.max(count - 1, 0);
     const startAngle = 200;
     const endAngle = 340;
