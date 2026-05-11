@@ -429,7 +429,7 @@ function renderState(state) {
     const handInfo = showSeatResultDetails ? p.handName || "" : "";
     const potWinInfo = showSeatResultDetails ? p.potWinText || "" : "";
     const roundBetInfo = p.roundBetText || "";
-    const chipChange = showSeatResultDetails ? p.chipChangeText || "" : "";
+    const chipChange = p.chipChangeText || "";
     const chipColor =
       p.chipChangeValue > 0 ? "#86efac" :
       p.chipChangeValue < 0 ? "#fca5a5" :
@@ -437,10 +437,6 @@ function renderState(state) {
 
     const lastActionEntry = latestPlayerActions.get(p.name) || "";
     const lastAction = buildLastAction(lastActionEntry, p.name);
-
-    const winnerBadgeHtml = winnerNames.includes(p.name)
-      ? `<div class="winner-badge">WINNER</div>`
-      : "";
 
     const crownHtml = winnerNames.includes(p.name)
       ? `<span class="winner-crown">👑</span>`
@@ -471,7 +467,6 @@ function renderState(state) {
           <div class="player-badges">${positionBadge}</div>
           ${opponentCardsHtml}
           ${lastActionHtml}
-          ${winnerBadgeHtml}
         </div>
       `;
 
@@ -489,8 +484,6 @@ function renderState(state) {
         <div class="player-chip-row">
           <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
         </div>
-
-        ${winnerBadgeHtml}
 
         <div class="player-badges">${positionBadge}</div>
 

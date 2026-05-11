@@ -520,22 +520,6 @@ body {
   line-height: 1;
 }
 
-.winner-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 5px;
-  min-height: 18px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.18);
-  color: #dcfce7;
-  border: 1px solid rgba(34, 197, 94, 0.26);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
 @keyframes winnerBlink {
   0% {
     box-shadow:
@@ -994,8 +978,7 @@ body {
   .player-extra,
   .player-delta,
   .player-last-action,
-  .current-turn-badge,
-  .winner-badge {
+  .current-turn-badge {
     margin-top: 2px;
   }
 
@@ -1019,8 +1002,7 @@ body {
 
   .player-seat:not(.me-seat):not(.cards-visible) .player-cards,
   .player-seat:not(.me-seat):not(.cards-visible) .player-extra,
-  .player-seat:not(.me-seat) .player-delta,
-  .player-seat:not(.winner) .winner-badge {
+  .player-seat:not(.me-seat) .player-delta {
     display: none;
   }
 
@@ -1096,7 +1078,6 @@ body {
   }
 
   .current-turn-badge,
-  .winner-badge,
   .player-last-action {
     min-height: 10px;
     padding: 1px 3px;
@@ -1544,8 +1525,7 @@ body {
   .player-extra,
   .player-delta,
   .player-last-action,
-  .current-turn-badge,
-  .winner-badge {
+  .current-turn-badge {
     margin-top: 2px;
   }
 
@@ -1569,8 +1549,7 @@ body {
 
   .player-seat:not(.me-seat):not(.cards-visible) .player-cards,
   .player-seat:not(.me-seat):not(.cards-visible) .player-extra,
-  .player-seat:not(.me-seat) .player-delta,
-  .player-seat:not(.winner) .winner-badge {
+  .player-seat:not(.me-seat) .player-delta {
     display: none;
   }
 
@@ -1646,7 +1625,6 @@ body {
   }
 
   .current-turn-badge,
-  .winner-badge,
   .player-last-action {
     min-height: 10px;
     padding: 1px 3px;
