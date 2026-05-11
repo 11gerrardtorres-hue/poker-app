@@ -29,11 +29,8 @@ const showdownBtn = document.getElementById("showdownBtn");
 const applySettingsBtn = document.getElementById("applySettingsBtn");
 
 const playersLayer = document.getElementById("playersLayer");
-const chipFxLayer = document.getElementById("chipFxLayer");
 const resultBox = document.getElementById("resultBox");
 const potCenterValue = document.getElementById("potCenterValue");
-const potBreakdownBox = document.getElementById("potBreakdownBox");
-const showdownSummaryBox = document.getElementById("showdownSummaryBox");
 const roomInfoBox = document.getElementById("roomInfoBox");
 const blindBox = document.getElementById("blindBox");
 
@@ -61,8 +58,6 @@ const OPPONENT_AVATAR_LOSE = "assets/player-lose.webp";
 
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
-let lastAnimatedPot = 0;
-let lastAnimatedShowdownKey = "";
 let latestRoomInfo = {
   inRoom: false,
   roomCode: "",
@@ -333,88 +328,6 @@ function getOpponentAvatarSrc(player, state, winnerNames) {
   return winnerNames.includes(player.name) ? OPPONENT_AVATAR_WIN : OPPONENT_AVATAR_LOSE;
 }
 
-function renderPotBreakdown(state) {
-  const pots = state.potBreakdown || [];
-  if (!pots.length || state.street === "리버완료") {
-    potBreakdownBox.innerHTML = "";
-    return;
-  }
-
-  potBreakdownBox.innerHTML = pots.map((pot) => `
-    <div class="pot-breakdown-row">
-      <span>${pot.label}</span>
-      <strong>${formatNumber(pot.amount)}</strong>
-    </div>
-  `).join("");
-}
-
-function renderShowdownSummary(state) {
-  const summary = state.showdownSummary || [];
-  if (state.street !== "리버완료" || summary.length === 0) {
-    showdownSummaryBox.innerHTML = "";
-    return;
-  }
-
-  showdownSummaryBox.innerHTML = summary.map((item) => `
-    <div class="showdown-summary-row">
-      <span>${item.label} ${formatNumber(item.amount)}</span>
-      <strong>${item.winnerNames.join(", ")}</strong>
-      ${item.hand ? `<em>${item.hand}</em>` : ""}
-    </div>
-  `).join("");
-}
-
-function spawnChipFx(startX, startY, dx, dy, isBig = false) {
-  if (!chipFxLayer) return;
-
-  const chip = document.createElement("div");
-  chip.className = `chip-fx fly${isBig ? " big" : ""}`;
-  chip.style.left = `${startX}%`;
-  chip.style.top = `${startY}%`;
-  chip.style.setProperty("--chip-dx", `${dx}px`);
-  chip.style.setProperty("--chip-dy", `${dy}px`);
-  chipFxLayer.appendChild(chip);
-
-  setTimeout(() => chip.remove(), 700);
-}
-
-function animateChipsToPot() {
-  for (let i = 0; i < 5; i += 1) {
-    const startX = 34 + i * 8;
-    const startY = 82 + (i % 2) * 4;
-    spawnChipFx(startX, startY, (50 - startX) * 4, (51 - startY) * 3, i === 2);
-  }
-}
-
-function animatePotToWinners() {
-  for (let i = 0; i < 7; i += 1) {
-    const angle = (Math.PI * 2 * i) / 7;
-    spawnChipFx(50, 48, Math.cos(angle) * 76, Math.sin(angle) * 42, i % 3 === 0);
-  }
-}
-
-function updateChipAnimations(state, previousState) {
-  if (!previousState) {
-    lastAnimatedPot = state.pot || 0;
-    lastAnimatedShowdownKey = "";
-    return;
-  }
-
-  if ((state.pot || 0) > lastAnimatedPot && state.street !== "리버완료") {
-    animateChipsToPot();
-  }
-  lastAnimatedPot = state.pot || 0;
-
-  const showdownKey = `${state.street}:${(state.showdownSummary || []).map((item) => `${item.label}-${item.amount}-${item.winnerNames.join("/")}`).join("|")}`;
-  if (state.street === "리버완료" && showdownKey !== lastAnimatedShowdownKey && (state.showdownSummary || []).length > 0) {
-    animatePotToWinners();
-    lastAnimatedShowdownKey = showdownKey;
-  }
-  if (state.street !== "리버완료") {
-    lastAnimatedShowdownKey = "";
-  }
-}
-
 function getLatestPlayerActions(actionLogs) {
   const map = new Map();
   if (!actionLogs) return map;
@@ -454,15 +367,12 @@ function updateRevealModal(state) {
 }
 
 function renderState(state) {
-  const previousState = latestState;
   latestState = state;
   updateRaiseUi(state);
   updateCallButton(state);
   updateRoomInfo();
   updateRevealModal(state);
   renderPlayerChipSettings(state);
-  renderPotBreakdown(state);
-  renderShowdownSummary(state);
 
   potCenterValue.textContent = formatNumber(state.pot);
   resultBox.textContent = state.result || "";
@@ -599,7 +509,6 @@ function renderState(state) {
 
   previousCommunity = [...state.community];
   updateBottomButtons(state);
-  updateChipAnimations(state, previousState);
 }
 
 raiseAmountInput.addEventListener("input", () => {
@@ -690,13 +599,8 @@ socket.on("roomInfo", (roomInfo) => {
 
   if (!roomInfo.inRoom) {
     playersLayer.innerHTML = "";
-    if (chipFxLayer) chipFxLayer.innerHTML = "";
     resultBox.textContent = "";
     potCenterValue.textContent = "0";
-    potBreakdownBox.innerHTML = "";
-    showdownSummaryBox.innerHTML = "";
-    lastAnimatedPot = 0;
-    lastAnimatedShowdownKey = "";
     blindBox.textContent = `블라인드: ${formatNumber(roomInfo.settings.smallBlind)} / ${formatNumber(roomInfo.settings.bigBlind)}`;
     revealDecisionModal.classList.add("hidden");
 
