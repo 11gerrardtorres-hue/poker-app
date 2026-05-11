@@ -425,7 +425,8 @@ function renderState(state) {
     else if (p.isDealer) positionBadge = `<span class="badge dealer">D</span>`;
     else if (p.positionLabel) positionBadge = `<span class="badge">${p.positionLabel}</span>`;
 
-    const showSeatResultDetails = state.street !== "리버완료";
+    const isShowdownComplete = state.street === "리버완료";
+    const showSeatResultDetails = !isShowdownComplete;
     const handInfo = showSeatResultDetails ? p.handName || "" : "";
     const potWinInfo = showSeatResultDetails ? p.potWinText || "" : "";
     const roundBetInfo = p.roundBetText || "";
@@ -434,6 +435,10 @@ function renderState(state) {
       p.chipChangeValue > 0 ? "#86efac" :
       p.chipChangeValue < 0 ? "#fca5a5" :
       "#e5e7eb";
+    const seatChipChange = isShowdownComplete ? "" : chipChange;
+    const inlineChipChangeHtml = isShowdownComplete && chipChange
+      ? `<span class="player-chip-delta" style="color:${chipColor};">${chipChange}</span>`
+      : "";
 
     const lastActionEntry = latestPlayerActions.get(p.name) || "";
     const lastAction = buildLastAction(lastActionEntry, p.name);
@@ -483,6 +488,7 @@ function renderState(state) {
 
         <div class="player-chip-row">
           <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
+          ${inlineChipChangeHtml}
         </div>
 
         <div class="player-badges">${positionBadge}</div>
@@ -497,7 +503,7 @@ function renderState(state) {
         <div class="player-extra">${handInfo}</div>
         <div class="player-extra">${potWinInfo}</div>
         <div class="player-delta" style="color:${chipColor};">
-          ${chipChange}
+          ${seatChipChange}
         </div>
       </div>
     `;
