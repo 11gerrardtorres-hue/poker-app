@@ -782,17 +782,19 @@ body {
 @media (max-width: 950px) and (orientation: landscape) {
   html,
   body {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .app-shell {
     width: 100%;
-    height: 100svh;
+    min-height: 100svh;
+    height: auto;
     margin: 0;
     padding: max(5px, env(safe-area-inset-top)) 6px max(5px, env(safe-area-inset-bottom));
     gap: 5px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .topbar {
@@ -903,7 +905,7 @@ body {
   }
 
   .poker-table {
-    height: clamp(220px, calc(100svh - 224px), 310px);
+    height: clamp(210px, calc(100svh - 218px), 286px);
     min-height: 0;
     border-width: 5px;
     border-radius: 36px;
@@ -915,9 +917,9 @@ body {
   }
 
   .table-center {
-    width: 210px;
-    max-width: 58%;
-    top: 51%;
+    width: 190px;
+    max-width: 54%;
+    top: 47%;
   }
 
   .pot-pill {
@@ -949,8 +951,8 @@ body {
   }
 
   .card-slot {
-    width: 29px;
-    height: 40px;
+    width: 27px;
+    height: 37px;
     border-radius: 6px;
     font-size: 11px;
   }
@@ -1048,36 +1050,49 @@ body {
   }
 
   .me-seat {
-    width: 100px;
+    width: 82px;
   }
 
   .me-seat .player-card {
-    padding: 5px;
+    padding: 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
 
   .me-seat .player-name {
-    max-width: 70px;
-    font-size: 9px;
-  }
-
-  .me-seat .player-chip-pill {
-    min-height: 13px;
+    max-width: 56px;
     font-size: 8px;
   }
 
+  .me-seat .player-chip-pill {
+    min-height: 12px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
-    margin-top: 3px;
-    gap: 4px;
+    margin-top: 2px;
+    gap: 3px;
+  }
+
+  .me-seat .player-extra:empty,
+  .me-seat .player-delta:empty {
+    display: none;
+  }
+
+  .me-seat .player-extra,
+  .me-seat .player-delta {
+    min-height: 0;
+    margin-top: 1px;
+    font-size: 6px;
+    line-height: 1.05;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 23px;
-    height: 32px;
+    width: 20px;
+    height: 27px;
     border-radius: 5px;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .current-turn-badge,
@@ -1452,9 +1467,9 @@ body {
   }
 
   .table-center {
-    width: 210px;
-    max-width: 58%;
-    top: 51%;
+    width: 190px;
+    max-width: 54%;
+    top: 48%;
   }
 
   .pot-pill {
@@ -1486,8 +1501,8 @@ body {
   }
 
   .card-slot {
-    width: 29px;
-    height: 40px;
+    width: 27px;
+    height: 37px;
     border-radius: 6px;
     font-size: 11px;
   }
@@ -1585,36 +1600,49 @@ body {
   }
 
   .me-seat {
-    width: 100px;
+    width: 82px;
   }
 
   .me-seat .player-card {
-    padding: 5px;
+    padding: 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
 
   .me-seat .player-name {
-    max-width: 70px;
-    font-size: 9px;
-  }
-
-  .me-seat .player-chip-pill {
-    min-height: 13px;
+    max-width: 56px;
     font-size: 8px;
   }
 
+  .me-seat .player-chip-pill {
+    min-height: 12px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
-    margin-top: 3px;
-    gap: 4px;
+    margin-top: 2px;
+    gap: 3px;
+  }
+
+  .me-seat .player-extra:empty,
+  .me-seat .player-delta:empty {
+    display: none;
+  }
+
+  .me-seat .player-extra,
+  .me-seat .player-delta {
+    min-height: 0;
+    margin-top: 1px;
+    font-size: 6px;
+    line-height: 1.05;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 23px;
-    height: 32px;
+    width: 20px;
+    height: 27px;
     border-radius: 5px;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .current-turn-badge,
@@ -1911,5 +1939,35 @@ body {
     min-height: 50px;
     font-size: 13px;
     border-radius: 14px;
+  }
+}
+
+@media (max-width: 950px) and (orientation: landscape) {
+  .actions {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .actions button {
+    min-height: 34px;
+    padding: 5px 4px;
+    border-radius: 9px;
+    font-size: 10px;
+    line-height: 1.1;
+    box-shadow: none;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -8px;
+    border-width: 2px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-width: 2px;
   }
 }
