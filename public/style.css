@@ -371,8 +371,8 @@ body {
 }
 
 .opponent-avatar-img {
-  width: 54px;
-  height: 54px;
+  width: 62px;
+  height: 62px;
   border-radius: 999px;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.22);
@@ -423,11 +423,13 @@ body {
 }
 
 .winner .opponent-avatar-img {
-  border-color: rgba(34, 197, 94, 0.95);
-  box-shadow:
-    0 0 0 3px rgba(34, 197, 94, 0.18),
-    0 0 18px rgba(34, 197, 94, 0.24),
-    0 8px 18px rgba(0, 0, 0, 0.24);
+  border-color: rgba(74, 222, 128, 1);
+  animation: winnerAvatarPulse 0.72s infinite ease-in-out;
+}
+
+.loser .opponent-avatar-img {
+  border-color: rgba(248, 113, 113, 1);
+  animation: loserAvatarPulse 0.8s infinite ease-in-out;
 }
 
 .player-name-row {
@@ -461,20 +463,6 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   font-size: 10px;
   font-weight: 700;
-}
-
-.player-chip-delta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 18px;
-  padding: 2px 5px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.52);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
 }
 
 .current-turn .player-card {
@@ -526,22 +514,6 @@ body {
   animation: winnerBlink 0.9s infinite ease-in-out;
 }
 
-.winner-crown {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(251, 191, 36, 0.18);
-  border: 1px solid rgba(251, 191, 36, 0.28);
-  font-size: 11px;
-  line-height: 1;
-}
-
 @keyframes winnerBlink {
   0% {
     box-shadow:
@@ -560,6 +532,54 @@ body {
       0 0 0 0 rgba(34, 197, 94, 0.10),
       0 0 0 2px rgba(34, 197, 94, 0.18),
       0 12px 24px rgba(0, 0, 0, 0.20);
+  }
+}
+
+@keyframes winnerAvatarPulse {
+  0% {
+    box-shadow:
+      0 0 0 2px rgba(34, 197, 94, 0.35),
+      0 0 12px rgba(34, 197, 94, 0.32),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1.02) saturate(1.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(34, 197, 94, 0.42),
+      0 0 34px 9px rgba(34, 197, 94, 0.58),
+      0 10px 22px rgba(0, 0, 0, 0.26);
+    filter: brightness(1.42) saturate(1.35);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(34, 197, 94, 0.35),
+      0 0 12px rgba(34, 197, 94, 0.32),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1.02) saturate(1.1);
+  }
+}
+
+@keyframes loserAvatarPulse {
+  0% {
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.28),
+      0 0 10px rgba(239, 68, 68, 0.22),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(0.92) saturate(1.05);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(239, 68, 68, 0.38),
+      0 0 28px 7px rgba(239, 68, 68, 0.48),
+      0 10px 22px rgba(0, 0, 0, 0.26);
+    filter: brightness(1.15) saturate(1.35);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.28),
+      0 0 10px rgba(239, 68, 68, 0.22),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(0.92) saturate(1.05);
   }
 }
 
@@ -1123,12 +1143,6 @@ body {
     margin-top: 1px;
   }
 
-  .me-seat .player-chip-delta {
-    min-height: 12px;
-    padding: 1px 3px;
-    font-size: 7px;
-  }
-
   .me-seat .player-cards {
     margin-top: 1px;
     gap: 2px;
@@ -1174,14 +1188,6 @@ body {
     line-height: 1;
   }
 
-  .winner-crown {
-    top: 3px;
-    right: 3px;
-    width: 13px;
-    height: 13px;
-    font-size: 8px;
-  }
-
   .player-extra,
   .player-delta {
     min-height: 10px;
@@ -1197,8 +1203,8 @@ body {
   }
 
   .opponent-avatar-img {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     border-width: 1px;
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
   }
@@ -1227,8 +1233,8 @@ body {
   }
 
   .cards-visible:not(.me-seat) .opponent-avatar-img {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
   }
 
   .control-card {
@@ -1720,12 +1726,6 @@ body {
     margin-top: 1px;
   }
 
-  .me-seat .player-chip-delta {
-    min-height: 12px;
-    padding: 1px 3px;
-    font-size: 7px;
-  }
-
   .me-seat .player-cards {
     margin-top: 1px;
     gap: 2px;
@@ -1771,14 +1771,6 @@ body {
     line-height: 1;
   }
 
-  .winner-crown {
-    top: 3px;
-    right: 3px;
-    width: 13px;
-    height: 13px;
-    font-size: 8px;
-  }
-
   .player-extra,
   .player-delta {
     min-height: 10px;
@@ -1794,8 +1786,8 @@ body {
   }
 
   .opponent-avatar-img {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     border-width: 1px;
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
   }
@@ -1824,8 +1816,8 @@ body {
   }
 
   .cards-visible:not(.me-seat) .opponent-avatar-img {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
   }
 
   .control-card {
