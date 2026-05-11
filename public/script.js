@@ -502,11 +502,11 @@ function renderState(state) {
     wrap.style.left = `${seat.left}%`;
     wrap.style.top = `${seat.top}%`;
 
-    const badges = [];
-    if (p.positionLabel) badges.push(`<span class="badge">${p.positionLabel}</span>`);
-    if (p.isDealer) badges.push(`<span class="badge dealer">D</span>`);
-    if (p.isSmallBlind) badges.push(`<span class="badge sb">SB</span>`);
-    if (p.isBigBlind) badges.push(`<span class="badge bb">BB</span>`);
+    let positionBadge = "";
+    if (p.isSmallBlind) positionBadge = `<span class="badge sb">SB</span>`;
+    else if (p.isBigBlind) positionBadge = `<span class="badge bb">BB</span>`;
+    else if (p.isDealer) positionBadge = `<span class="badge dealer">D</span>`;
+    else if (p.positionLabel) positionBadge = `<span class="badge">${p.positionLabel}</span>`;
 
     const handInfo = p.handName || "";
     const potWinInfo = p.potWinText || "";
@@ -550,7 +550,7 @@ function renderState(state) {
             <div class="opponent-avatar-name">${p.name}</div>
             <div class="opponent-avatar-chips">${formatNumber(p.chips)}</div>
           </div>
-          <div class="player-badges">${badges.join("")}</div>
+          <div class="player-badges">${positionBadge}</div>
           ${opponentCardsHtml}
           ${lastActionHtml}
           ${winnerBadgeHtml}
@@ -574,7 +574,7 @@ function renderState(state) {
 
         ${winnerBadgeHtml}
 
-        <div class="player-badges">${badges.join("")}</div>
+        <div class="player-badges">${positionBadge}</div>
 
         <div class="player-cards">
           <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[0], p.cardsVisible)}</div>
