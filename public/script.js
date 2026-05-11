@@ -59,6 +59,9 @@ const revealHandBtn = document.getElementById("revealHandBtn");
 const hideHandBtn = document.getElementById("hideHandBtn");
 
 const HEARTBEAT_INTERVAL_MS = 25000;
+const OPPONENT_AVATAR_DEFAULT = "assets/player-default.png";
+const OPPONENT_AVATAR_WIN = "assets/player-win.jpeg";
+const OPPONENT_AVATAR_LOSE = "assets/player-lose.webp";
 
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
@@ -413,6 +416,11 @@ function buildLastAction(entry, playerName) {
   return { text, type: parsed.type };
 }
 
+function getOpponentAvatarSrc(player, state, winnerNames) {
+  if (state.street !== "리버완료") return OPPONENT_AVATAR_DEFAULT;
+  return winnerNames.includes(player.name) ? OPPONENT_AVATAR_WIN : OPPONENT_AVATAR_LOSE;
+}
+
 function getLatestPlayerActions(actionLogs) {
   const map = new Map();
   if (!actionLogs) return map;
@@ -523,6 +531,35 @@ function renderState(state) {
     const lastActionHtml = lastAction.text
       ? `<div class="player-last-action ${lastAction.type}">${lastAction.text}</div>`
       : "";
+
+    if (!p.isMe) {
+      const opponentAvatarSrc = getOpponentAvatarSrc(p, state, winnerNames);
+      const opponentCardsHtml = p.cardsVisible
+        ? `
+          <div class="opponent-avatar-cards">
+            <div class="small-card">${formatCardHtml(p.cards[0], true)}</div>
+            <div class="small-card">${formatCardHtml(p.cards[1], true)}</div>
+          </div>
+        `
+        : "";
+
+      wrap.innerHTML = `
+        <div class="opponent-avatar-card">
+          <img class="opponent-avatar-img" src="${opponentAvatarSrc}" alt="${p.name}">
+          <div class="opponent-avatar-info">
+            <div class="opponent-avatar-name">${p.name}</div>
+            <div class="opponent-avatar-chips">${formatNumber(p.chips)}</div>
+          </div>
+          <div class="player-badges">${badges.join("")}</div>
+          ${opponentCardsHtml}
+          ${lastActionHtml}
+          ${winnerBadgeHtml}
+        </div>
+      `;
+
+      playersLayer.appendChild(wrap);
+      return;
+    }
 
     wrap.innerHTML = `
       <div class="player-card">
