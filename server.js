@@ -52,8 +52,6 @@ function createRoomState(roomCode) {
     result: "",
     lastWinnerNames: [],
     lastWinnerIds: [],
-    potBreakdown: [],
-    showdownSummary: [],
     bettingOpen: false,
     dealerIndex: -1,
     lastFullRaiseSize: DEFAULT_BIG_BLIND,
@@ -420,30 +418,6 @@ function distributeAmountAmongWinners(winners, amount) {
   }
 }
 
-function buildPotSummary(label, amount, winners, evaluation) {
-  return {
-    label,
-    amount,
-    winnerNames: winners.map((p) => p.name),
-    hand: evaluation ? getHandLabel(evaluation) : ""
-  };
-}
-
-function visiblePotBreakdown(room) {
-  if (room.street === "리버완료") return room.potBreakdown;
-
-  const sidePots = buildSidePots(room);
-  if (sidePots.length <= 1) return [];
-
-  return sidePots.map((sidePot, index) => ({
-    label: index === 0 ? "메인팟" : `사이드팟${index}`,
-    amount: sidePot.amount,
-    eligibleNames: room.players
-      .filter((p) => sidePot.eligibleIds.includes(p.id))
-      .map((p) => p.name)
-  }));
-}
-
 function finalizeChipChangeTexts(room) {
   room.players.forEach((p) => {
     const diff = p.chips - p.startChips;
@@ -524,8 +498,6 @@ function showdown(room, reason = "river_showdown") {
   const alive = activePlayers(room);
   room.lastWinnerNames = [];
   room.lastWinnerIds = [];
-  room.potBreakdown = [];
-  room.showdownSummary = [];
   room.hiddenHandPlayerIds = [];
   clearRevealDecision(room);
   resetPotWinTexts(room);
@@ -543,13 +515,10 @@ function showdown(room, reason = "river_showdown") {
   });
 
   if (alive.length === 1) {
-    const wonAmount = room.pot;
     alive[0].chips += room.pot;
     room.lastWinnerNames = [alive[0].name];
     room.lastWinnerIds = [alive[0].id];
     alive[0].potWinText = "팟 승리";
-    room.potBreakdown = [{ label: "팟", amount: wonAmount, eligibleNames: [alive[0].name] }];
-    room.showdownSummary = [buildPotSummary("팟", wonAmount, [alive[0]], null)];
     room.result = `${alive[0].name} 승리!`;
     pushLogEntry(room, `${alive[0].name} 승리`);
 
@@ -565,13 +534,6 @@ function showdown(room, reason = "river_showdown") {
   }
 
   const sidePots = buildSidePots(room);
-  room.potBreakdown = sidePots.map((sidePot, index) => ({
-    label: index === 0 ? "메인팟" : `사이드팟${index}`,
-    amount: sidePot.amount,
-    eligibleNames: room.players
-      .filter((p) => sidePot.eligibleIds.includes(p.id))
-      .map((p) => p.name)
-  }));
   const summaryLines = [];
 
   if (sidePots.length === 0) {
@@ -597,8 +559,6 @@ function showdown(room, reason = "river_showdown") {
     distributeAmountAmongWinners(winners, room.pot);
     room.lastWinnerNames = winners.map((p) => p.name);
     room.lastWinnerIds = winners.map((p) => p.id);
-    room.potBreakdown = [{ label: "팟", amount: room.pot, eligibleNames: alive.map((p) => p.name) }];
-    room.showdownSummary = [buildPotSummary("팟", room.pot, winners, bestEvaluation)];
 
     winners.forEach((winner) => {
       winner.potWinTexts.push(winners.length === 1 ? "팟 승리" : "팟 공동승리");
@@ -638,7 +598,6 @@ function showdown(room, reason = "river_showdown") {
       distributeAmountAmongWinners(winners, sidePot.amount);
 
       const potLabel = index === 0 ? "메인팟" : `사이드팟${index}`;
-      room.showdownSummary.push(buildPotSummary(potLabel, sidePot.amount, winners, bestEvaluation));
       winners.forEach((winner) => {
         winner.potWinTexts.push(winners.length === 1 ? `${potLabel} 승리` : `${potLabel} 공동승리`);
       });
@@ -883,8 +842,6 @@ function startHand(room, resetStacks) {
   room.lastWinnerNames = [];
   room.lastWinnerIds = [];
   room.street = "프리플랍";
-  room.potBreakdown = [];
-  room.showdownSummary = [];
   room.bettingOpen = true;
   room.mustActIds = [];
   room.canRaiseIds = [];
@@ -1004,8 +961,6 @@ function sendState(room) {
       pot: room.pot,
       street: room.street,
       result: room.result,
-      potBreakdown: visiblePotBreakdown(room),
-      showdownSummary: room.street === "리버완료" ? room.showdownSummary : [],
       actionLogs: room.actionLogs,
       winnerNames: room.street === "리버완료" ? room.lastWinnerNames : [],
       currentTurnName: room.bettingOpen && room.mustActIds.length > 0
