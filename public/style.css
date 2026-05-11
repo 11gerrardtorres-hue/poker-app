@@ -780,136 +780,436 @@ body {
 }
 
 @media (max-width: 950px) and (orientation: landscape) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .app-shell {
     width: 100%;
+    height: 100svh;
     margin: 0;
-    padding: 8px;
-    gap: 8px;
+    padding: max(5px, env(safe-area-inset-top)) 6px max(5px, env(safe-area-inset-bottom));
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  .topbar {
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .brand {
+    min-width: 82px;
   }
 
   .brand-title {
-    font-size: 18px;
+    font-size: 17px;
+    line-height: 1;
   }
 
   .brand-subtitle {
-    font-size: 10px;
+    display: none;
+  }
+
+  .status-row {
+    flex: 1;
+    gap: 4px;
+    justify-content: flex-end;
   }
 
   .status-chip {
-    padding: 6px 8px;
+    padding: 5px 7px;
     font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .room-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .room-entry-panel {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .room-panel input,
   .room-panel button {
-    padding: 8px 10px;
-    font-size: 12px;
+    width: 100%;
+    min-width: 0;
+    min-height: 28px;
+    padding: 5px 5px;
+    border-radius: 8px;
+    font-size: 10px;
+    line-height: 1.1;
   }
 
-  .main-layout {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  #name,
+  #roomCodeInput,
+  #createRoomBtn,
+  #joinRoomBtn,
+  #leaveRoomBtn {
+    grid-column: span 1;
   }
 
-  .table-card {
-    padding: 8px;
+  #settingsPanel {
+    grid-template-columns: 1fr 1fr 1.2fr;
   }
 
-  .poker-table {
-    min-height: 500px;
-    border-width: 7px;
-    border-radius: 100px;
+  .player-chip-settings {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
   }
 
-  .players-layer {
-    min-height: 500px;
-  }
-
-  .table-center {
-    width: 280px;
-    max-width: 58%;
-  }
-
-  .pot-pill {
-    width: 110px;
-    padding: 6px 8px;
-    margin-bottom: 8px;
-  }
-
-  .pot-pill-value {
-    font-size: 18px;
-  }
-
-  .community-block {
-    padding: 8px;
-    border-radius: 14px;
-  }
-
-  .community-title {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  .card-slot {
-    width: 34px;
-    height: 48px;
+  .player-chip-setting {
+    grid-template-columns: minmax(0, 1fr) 58px;
+    gap: 4px;
+    padding: 4px;
     border-radius: 8px;
   }
 
-  .result-box {
-    margin-top: 6px;
-    font-size: 12px;
-    min-height: 16px;
-  }
-
-  .player-seat {
-    width: 104px;
-  }
-
-  .player-name {
+  .player-chip-setting span,
+  .player-chip-setting input {
     font-size: 9px;
   }
 
-  .player-chip-pill {
+  .player-chip-setting input {
+    padding: 3px 4px;
+    border-radius: 6px;
+  }
+
+  .main-layout {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .table-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .table-card {
+    flex: 1;
+    min-height: 0;
+    padding: 5px;
+    border-radius: 14px;
+  }
+
+  .poker-table {
+    height: clamp(220px, calc(100svh - 224px), 310px);
+    min-height: 0;
+    border-width: 5px;
+    border-radius: 36px;
+  }
+
+  .players-layer {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .table-center {
+    width: 210px;
+    max-width: 58%;
+    top: 51%;
+  }
+
+  .pot-pill {
+    width: 96px;
+    margin-bottom: 5px;
+    padding: 4px 6px;
+  }
+
+  .pot-pill-label {
     font-size: 8px;
-    min-height: 15px;
+  }
+
+  .pot-pill-value {
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .community-block {
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .community-title {
+    display: none;
+  }
+
+  .community-cards {
+    gap: 3px;
+  }
+
+  .card-slot {
+    width: 29px;
+    height: 40px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .result-box {
+    margin-top: 4px;
+    min-height: 14px;
+    padding: 0 3px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .player-seat {
+    width: 70px;
+  }
+
+  .player-card {
+    padding: 3px 4px;
+    border-radius: 8px;
+    background: rgba(8, 16, 30, 0.88);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .player-card::after {
+    display: none;
+  }
+
+  .player-name {
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 7px;
+    line-height: 1.1;
+  }
+
+  .player-chip-row,
+  .player-badges,
+  .player-extra,
+  .player-delta,
+  .player-last-action,
+  .current-turn-badge,
+  .winner-badge {
+    margin-top: 2px;
+  }
+
+  .player-chip-pill {
+    min-height: 11px;
+    padding: 1px 3px;
+    font-size: 6px;
+    line-height: 1;
+  }
+
+  .player-badges {
+    min-height: 9px;
+    gap: 2px;
+  }
+
+  .badge {
+    padding: 1px 2px;
+    font-size: 6px;
+    line-height: 1;
+  }
+
+  .player-seat:not(.me-seat):not(.cards-visible) .player-cards,
+  .player-seat:not(.me-seat):not(.cards-visible) .player-extra,
+  .player-seat:not(.me-seat) .player-delta,
+  .player-seat:not(.winner) .winner-badge {
+    display: none;
+  }
+
+  .cards-visible:not(.me-seat) {
+    width: 86px;
+  }
+
+  .cards-visible:not(.me-seat) .player-card {
+    padding: 4px;
+    border-color: rgba(251, 191, 36, 0.22);
+  }
+
+  .cards-visible:not(.me-seat) .player-name {
+    max-width: 62px;
+  }
+
+  .cards-visible:not(.me-seat) .player-cards {
+    margin-top: 3px;
+    gap: 3px;
+  }
+
+  .cards-visible:not(.me-seat) .player-extra {
+    min-height: 0;
+    margin-top: 2px;
+    font-size: 6px;
+    line-height: 1.1;
+  }
+
+  .me-seat {
+    width: 100px;
+  }
+
+  .me-seat .player-card {
+    padding: 5px;
+    background: rgba(12, 25, 45, 0.94);
+    border-color: rgba(251, 191, 36, 0.26);
+  }
+
+  .me-seat .player-name {
+    max-width: 70px;
+    font-size: 9px;
+  }
+
+  .me-seat .player-chip-pill {
+    min-height: 13px;
+    font-size: 8px;
+  }
+
+  .me-seat .player-cards {
+    margin-top: 3px;
+    gap: 4px;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 26px;
-    height: 38px;
-    border-radius: 6px;
+    width: 23px;
+    height: 32px;
+    border-radius: 5px;
+    font-size: 9px;
   }
 
   .current-turn-badge,
   .winner-badge,
   .player-last-action {
-    font-size: 8px;
-    min-height: 15px;
-    padding: 2px 6px;
+    min-height: 10px;
+    padding: 1px 3px;
+    font-size: 6px;
+    line-height: 1;
   }
 
   .winner-crown {
-    width: 15px;
-    height: 15px;
-    font-size: 9px;
+    width: 13px;
+    height: 13px;
+    font-size: 8px;
   }
 
   .player-extra,
   .player-delta {
-    font-size: 8px;
-    min-height: 11px;
+    min-height: 10px;
+    font-size: 7px;
+  }
+
+  .folded .player-card {
+    opacity: 0.58;
+  }
+
+  .opponent-avatar-card {
+    gap: 2px;
+  }
+
+  .opponent-avatar-img {
+    width: 34px;
+    height: 34px;
+    border-width: 1px;
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
+  }
+
+  .opponent-avatar-info {
+    padding: 1px 5px;
+  }
+
+  .opponent-avatar-name,
+  .opponent-avatar-chips {
+    max-width: 58px;
+  }
+
+  .opponent-avatar-name {
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .opponent-avatar-chips {
+    font-size: 6px;
+    line-height: 1;
+  }
+
+  .opponent-avatar-cards {
+    gap: 2px;
+  }
+
+  .cards-visible:not(.me-seat) .opponent-avatar-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .control-card {
+    margin-top: 5px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .control-title {
+    display: none;
+  }
+
+  .bet-box {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 7px;
+    border-radius: 10px;
+  }
+
+  .bet-box label {
+    margin: 0;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .bet-value {
+    margin: 0;
+    min-width: 40px;
+    font-size: 11px;
+    text-align: right;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+  }
+
+  .bet-box input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -8px;
+    border-width: 2px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-track {
+    height: 6px;
+  }
+
+  .bet-box input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-width: 2px;
   }
 
   .actions {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 5px;
   }
 
   .actions button {
-    padding: 8px 6px;
+    min-height: 34px;
+    padding: 5px 4px;
+    border-radius: 9px;
     font-size: 10px;
+    line-height: 1.1;
+    box-shadow: none;
   }
 }
 /* ===== 버튼 UX 업그레이드 ===== */
