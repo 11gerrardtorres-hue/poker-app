@@ -142,10 +142,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 6px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: thin;
 }
 
 .player-chip-setting {
@@ -916,7 +912,6 @@ body {
   .player-chip-settings {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
-    max-height: 84px;
   }
 
   .player-chip-setting {
@@ -1515,7 +1510,6 @@ body {
   .player-chip-settings {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
-    max-height: min(176px, 28svh);
   }
 
   .player-chip-setting {
@@ -2095,19 +2089,4 @@ body {
     height: 22px;
     border-width: 2px;
   }
-}
-
-body.setup-active {
-  overflow-y: auto;
-}
-
-body.setup-active .app-shell {
-  height: auto;
-  min-height: 100svh;
-  overflow: visible;
-}
-
-body.setup-active .player-chip-settings:not(.hidden) {
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
 }
