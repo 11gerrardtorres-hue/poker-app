@@ -413,9 +413,7 @@ function updateRevealModal(state) {
 
 function renderState(state) {
   latestState = state;
-  const setupActive = latestRoomInfo.inRoom && state.street === "대기중";
   const gameActive = latestRoomInfo.inRoom && state.street !== "대기중";
-  document.body.classList.toggle("setup-active", setupActive);
   document.body.classList.toggle("game-active", gameActive);
 
   updateRaiseUi(state);
@@ -678,7 +676,7 @@ socket.on("roomInfo", (roomInfo) => {
     showdownBtn.textContent = "다음 게임";
     raiseAmountInput.disabled = true;
     closeRaisePopup();
-    document.body.classList.remove("setup-active", "game-active");
+    document.body.classList.remove("game-active");
 
     smallBlindInput.value = roomInfo.settings.smallBlind;
     bigBlindInput.value = roomInfo.settings.bigBlind;
