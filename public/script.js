@@ -110,16 +110,25 @@ function getSeatPositions(count) {
     window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
 
   if (isPortraitMobile) {
-    const portraitMap = {
-      2: [{ left: 50, top: 86 }, { left: 50, top: 14 }],
-      3: [{ left: 50, top: 86 }, { left: 12, top: 27 }, { left: 88, top: 27 }],
-      4: [{ left: 50, top: 86 }, { left: 11, top: 47 }, { left: 26, top: 13 }, { left: 74, top: 13 }],
-      5: [{ left: 50, top: 86 }, { left: 11, top: 52 }, { left: 12, top: 24 }, { left: 50, top: 12 }, { left: 88, top: 24 }],
-      6: [{ left: 50, top: 86 }, { left: 11, top: 56 }, { left: 11, top: 33 }, { left: 24, top: 12 }, { left: 76, top: 12 }, { left: 89, top: 33 }],
-      7: [{ left: 50, top: 86 }, { left: 11, top: 58 }, { left: 11, top: 39 }, { left: 12, top: 21 }, { left: 50, top: 11 }, { left: 88, top: 21 }, { left: 89, top: 39 }],
-      8: [{ left: 50, top: 86 }, { left: 11, top: 59 }, { left: 11, top: 42 }, { left: 12, top: 25 }, { left: 31, top: 11 }, { left: 69, top: 11 }, { left: 88, top: 25 }, { left: 89, top: 42 }]
-    };
-    return portraitMap[count] || portraitMap[8];
+    const seats = [{ left: 50, top: 86 }];
+    const opponentCount = Math.max(count - 1, 0);
+    const startAngle = 200;
+    const endAngle = 340;
+    const centerX = 50;
+    const centerY = 50;
+    const radiusX = 42;
+    const radiusY = 40;
+
+    for (let i = 0; i < opponentCount; i += 1) {
+      const ratio = opponentCount === 1 ? 0.5 : i / (opponentCount - 1);
+      const angle = (startAngle + (endAngle - startAngle) * ratio) * Math.PI / 180;
+      seats.push({
+        left: Number((centerX + radiusX * Math.cos(angle)).toFixed(1)),
+        top: Number((centerY + radiusY * Math.sin(angle)).toFixed(1))
+      });
+    }
+
+    return seats;
   }
 
   const desktopMap = {
