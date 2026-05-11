@@ -447,6 +447,7 @@ function renderState(state) {
     if (p.isCurrentTurn) wrap.classList.add("current-turn");
     if (p.folded) wrap.classList.add("folded");
     if (winnerNames.includes(p.name)) wrap.classList.add("winner");
+    if (state.street === "리버완료" && !winnerNames.includes(p.name)) wrap.classList.add("loser");
 
     wrap.style.left = `${seat.left}%`;
     wrap.style.top = `${seat.top}%`;
@@ -467,17 +468,10 @@ function renderState(state) {
       p.chipChangeValue > 0 ? "#86efac" :
       p.chipChangeValue < 0 ? "#fca5a5" :
       "#e5e7eb";
-    const seatChipChange = isShowdownComplete ? "" : chipChange;
-    const inlineChipChangeHtml = isShowdownComplete && chipChange
-      ? `<span class="player-chip-delta" style="color:${chipColor};">${chipChange}</span>`
-      : "";
+    const seatChipChange = chipChange;
 
     const lastActionEntry = latestPlayerActions.get(p.name) || "";
     const lastAction = buildLastAction(lastActionEntry, p.name);
-
-    const crownHtml = winnerNames.includes(p.name)
-      ? `<span class="winner-crown">👑</span>`
-      : "";
 
     const lastActionHtml = lastAction.text
       ? `<div class="player-last-action ${lastAction.type}">${lastAction.text}</div>`
@@ -515,12 +509,10 @@ function renderState(state) {
       <div class="player-card">
         <div class="player-name-row">
           <div class="player-name">${p.name}${p.isMe ? " (나)" : ""}</div>
-          ${crownHtml}
         </div>
 
         <div class="player-chip-row">
           <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
-          ${inlineChipChangeHtml}
         </div>
 
         <div class="player-badges">${positionBadge}</div>
