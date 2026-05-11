@@ -997,8 +997,8 @@ body {
 
   .pot-breakdown-row,
   .showdown-summary-row {
-    gap: 5px;
-    padding: 3px 5px;
+    gap: 4px;
+    padding: 2px 5px;
     border-radius: 7px;
     font-size: 8px;
     line-height: 1.1;
@@ -1010,6 +1010,7 @@ body {
 
   .showdown-summary-row em {
     font-size: 7px;
+    line-height: 1;
   }
 
   .community-block {
@@ -1125,36 +1126,49 @@ body {
   }
 
   .me-seat {
-    width: 100px;
+    width: 88px;
   }
 
   .me-seat .player-card {
-    padding: 5px;
+    padding: 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
 
   .me-seat .player-name {
-    max-width: 70px;
-    font-size: 9px;
-  }
-
-  .me-seat .player-chip-pill {
-    min-height: 13px;
+    max-width: 62px;
     font-size: 8px;
   }
 
+  .me-seat .player-chip-pill {
+    min-height: 12px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
-    margin-top: 3px;
-    gap: 4px;
+    margin-top: 2px;
+    gap: 3px;
+  }
+
+  .me-seat .player-extra:empty,
+  .me-seat .player-delta:empty {
+    display: none;
+  }
+
+  .me-seat .player-extra,
+  .me-seat .player-delta {
+    min-height: 0;
+    margin-top: 1px;
+    font-size: 6px;
+    line-height: 1.05;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 23px;
-    height: 32px;
+    width: 21px;
+    height: 29px;
     border-radius: 5px;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .current-turn-badge,
@@ -1558,8 +1572,8 @@ body {
 
   .pot-breakdown-row,
   .showdown-summary-row {
-    gap: 5px;
-    padding: 3px 5px;
+    gap: 4px;
+    padding: 2px 5px;
     border-radius: 7px;
     font-size: 8px;
     line-height: 1.1;
@@ -1571,6 +1585,7 @@ body {
 
   .showdown-summary-row em {
     font-size: 7px;
+    line-height: 1;
   }
 
   .community-block {
@@ -1686,36 +1701,49 @@ body {
   }
 
   .me-seat {
-    width: 100px;
+    width: 88px;
   }
 
   .me-seat .player-card {
-    padding: 5px;
+    padding: 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
 
   .me-seat .player-name {
-    max-width: 70px;
-    font-size: 9px;
-  }
-
-  .me-seat .player-chip-pill {
-    min-height: 13px;
+    max-width: 62px;
     font-size: 8px;
   }
 
+  .me-seat .player-chip-pill {
+    min-height: 12px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
-    margin-top: 3px;
-    gap: 4px;
+    margin-top: 2px;
+    gap: 3px;
+  }
+
+  .me-seat .player-extra:empty,
+  .me-seat .player-delta:empty {
+    display: none;
+  }
+
+  .me-seat .player-extra,
+  .me-seat .player-delta {
+    min-height: 0;
+    margin-top: 1px;
+    font-size: 6px;
+    line-height: 1.05;
   }
 
   .player-seat .small-card,
   .player-seat .hidden-card {
-    width: 23px;
-    height: 32px;
+    width: 21px;
+    height: 29px;
     border-radius: 5px;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .current-turn-badge,
