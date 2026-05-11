@@ -442,6 +442,10 @@ body {
 }
 
 .player-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   margin-top: 4px;
 }
 
@@ -456,6 +460,20 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   font-size: 10px;
   font-weight: 700;
+}
+
+.player-chip-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .current-turn .player-card {
@@ -508,6 +526,9 @@ body {
 }
 
 .winner-crown {
+  position: absolute;
+  top: 5px;
+  right: 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1051,6 +1072,16 @@ body {
     font-size: 7px;
   }
 
+  .me-seat .player-chip-row {
+    gap: 2px;
+  }
+
+  .me-seat .player-chip-delta {
+    min-height: 12px;
+    padding: 1px 3px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
     margin-top: 2px;
     gap: 3px;
@@ -1086,6 +1117,8 @@ body {
   }
 
   .winner-crown {
+    top: 3px;
+    right: 3px;
     width: 13px;
     height: 13px;
     font-size: 8px;
@@ -1598,6 +1631,16 @@ body {
     font-size: 7px;
   }
 
+  .me-seat .player-chip-row {
+    gap: 2px;
+  }
+
+  .me-seat .player-chip-delta {
+    min-height: 12px;
+    padding: 1px 3px;
+    font-size: 7px;
+  }
+
   .me-seat .player-cards {
     margin-top: 2px;
     gap: 3px;
@@ -1633,6 +1676,8 @@ body {
   }
 
   .winner-crown {
+    top: 3px;
+    right: 3px;
     width: 13px;
     height: 13px;
     font-size: 8px;
