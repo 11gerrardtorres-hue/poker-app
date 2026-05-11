@@ -27,6 +27,8 @@ const raiseBtn = document.getElementById("raiseBtn");
 const allInBtn = document.getElementById("allInBtn");
 const showdownBtn = document.getElementById("showdownBtn");
 const applySettingsBtn = document.getElementById("applySettingsBtn");
+const confirmRaiseBtn = document.getElementById("confirmRaiseBtn");
+const cancelRaiseBtn = document.getElementById("cancelRaiseBtn");
 
 const playersLayer = document.getElementById("playersLayer");
 const resultBox = document.getElementById("resultBox");
@@ -38,6 +40,7 @@ const nameInput = document.getElementById("name");
 const roomCodeInput = document.getElementById("roomCodeInput");
 const raiseAmountInput = document.getElementById("raiseAmount");
 const raiseAmountText = document.getElementById("raiseAmountText");
+const raisePopup = document.getElementById("raisePopup");
 
 const smallBlindInput = document.getElementById("smallBlindInput");
 const bigBlindInput = document.getElementById("bigBlindInput");
@@ -170,6 +173,25 @@ function setRaiseAmount(value) {
   raiseAmountText.textContent = formatNumber(next);
 }
 
+function setRaisePopupOpen(open) {
+  if (!raisePopup) return;
+  raisePopup.classList.toggle("hidden", !open);
+}
+
+function resetRaiseAmountToMinimum() {
+  setRaiseAmount(Number(raiseAmountInput.min));
+}
+
+function openRaisePopup() {
+  if (!latestState || raiseBtn.disabled) return;
+  resetRaiseAmountToMinimum();
+  setRaisePopupOpen(true);
+}
+
+function closeRaisePopup() {
+  setRaisePopupOpen(false);
+}
+
 function updateRaiseUi(state) {
   if (!state) return;
 
@@ -264,10 +286,14 @@ function updateSettingsControls(state) {
   const isHost = latestRoomInfo.isHost;
   const pendingReveal = !!state.revealDecision?.pending;
   const canEdit = inRoom && isHost && !pendingReveal && state.street === "대기중";
+  const showSettings = inRoom && state.street === "대기중";
 
   smallBlindInput.disabled = !canEdit;
   bigBlindInput.disabled = !canEdit;
   applySettingsBtn.disabled = !canEdit;
+
+  const settingsPanel = document.getElementById("settingsPanel");
+  if (settingsPanel) settingsPanel.classList.toggle("hidden", !showSettings);
 }
 
 function renderPlayerChipSettings(state) {
@@ -316,6 +342,8 @@ function updateBottomButtons(state) {
   raiseBtn.disabled = !canRaise || handFinished;
   allInBtn.disabled = !canAct || handFinished || (state.myChips || 0) <= 0;
 
+  if (raiseBtn.disabled || !canRaise || handFinished) closeRaisePopup();
+
   if (handFinished) {
     showdownBtn.textContent = "다음 게임";
     showdownBtn.disabled = !inRoom || !isHost || pendingReveal;
@@ -325,6 +353,7 @@ function updateBottomButtons(state) {
   }
 
   raiseAmountInput.disabled = !canRaise || handFinished;
+  if (confirmRaiseBtn) confirmRaiseBtn.disabled = !canRaise || handFinished;
   updateSettingsControls(state);
 }
 
@@ -384,6 +413,11 @@ function updateRevealModal(state) {
 
 function renderState(state) {
   latestState = state;
+  const setupActive = latestRoomInfo.inRoom && state.street === "대기중";
+  const gameActive = latestRoomInfo.inRoom && state.street !== "대기중";
+  document.body.classList.toggle("setup-active", setupActive);
+  document.body.classList.toggle("game-active", gameActive);
+
   updateRaiseUi(state);
   updateCallButton(state);
   updateRoomInfo();
@@ -597,10 +631,24 @@ leaveRoomBtn.onclick = () => {
 };
 
 startBtn.onclick = () => socket.emit("startGame");
-foldBtn.onclick = () => socket.emit("fold");
-callBtn.onclick = () => socket.emit("call");
-raiseBtn.onclick = () => socket.emit("raise", Number(raiseAmountInput.value));
-allInBtn.onclick = () => socket.emit("allIn");
+foldBtn.onclick = () => {
+  closeRaisePopup();
+  socket.emit("fold");
+};
+callBtn.onclick = () => {
+  closeRaisePopup();
+  socket.emit("call");
+};
+raiseBtn.onclick = () => openRaisePopup();
+confirmRaiseBtn.onclick = () => {
+  socket.emit("raise", Number(raiseAmountInput.value));
+  closeRaisePopup();
+};
+cancelRaiseBtn.onclick = () => closeRaisePopup();
+allInBtn.onclick = () => {
+  closeRaisePopup();
+  socket.emit("allIn");
+};
 
 showdownBtn.onclick = () => {
   if (!latestState) return;
@@ -629,6 +677,8 @@ socket.on("roomInfo", (roomInfo) => {
     showdownBtn.disabled = true;
     showdownBtn.textContent = "다음 게임";
     raiseAmountInput.disabled = true;
+    closeRaisePopup();
+    document.body.classList.remove("setup-active", "game-active");
 
     smallBlindInput.value = roomInfo.settings.smallBlind;
     bigBlindInput.value = roomInfo.settings.bigBlind;
@@ -636,6 +686,8 @@ socket.on("roomInfo", (roomInfo) => {
     smallBlindInput.disabled = true;
     bigBlindInput.disabled = true;
     applySettingsBtn.disabled = true;
+    const settingsPanel = document.getElementById("settingsPanel");
+    if (settingsPanel) settingsPanel.classList.remove("hidden");
     if (playerChipSettings) {
       playerChipSettings.classList.add("hidden");
       playerChipSettings.innerHTML = "";
