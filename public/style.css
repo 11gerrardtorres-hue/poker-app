@@ -260,6 +260,59 @@ body {
   font-weight: 800;
 }
 
+.pot-breakdown-box,
+.showdown-summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 auto 8px;
+  max-width: 260px;
+}
+
+.pot-breakdown-row,
+.showdown-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pot-breakdown-row strong,
+.showdown-summary-row strong {
+  color: #fde68a;
+  font-weight: 900;
+}
+
+.showdown-summary-box {
+  margin: 6px auto 0;
+}
+
+.showdown-summary-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  text-align: left;
+}
+
+.showdown-summary-row strong,
+.showdown-summary-row em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.showdown-summary-row em {
+  grid-column: 1 / -1;
+  color: #bfdbfe;
+  font-size: 10px;
+  font-style: normal;
+}
+
 .community-block {
   background: rgba(0, 0, 0, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -935,6 +988,30 @@ body {
     line-height: 1.1;
   }
 
+  .pot-breakdown-box,
+  .showdown-summary-box {
+    gap: 2px;
+    margin-bottom: 4px;
+    max-width: 176px;
+  }
+
+  .pot-breakdown-row,
+  .showdown-summary-row {
+    gap: 5px;
+    padding: 3px 5px;
+    border-radius: 7px;
+    font-size: 8px;
+    line-height: 1.1;
+  }
+
+  .showdown-summary-box {
+    margin-top: 4px;
+  }
+
+  .showdown-summary-row em {
+    font-size: 7px;
+  }
+
   .community-block {
     padding: 6px;
     border-radius: 10px;
@@ -1470,6 +1547,30 @@ body {
   .pot-pill-value {
     font-size: 16px;
     line-height: 1.1;
+  }
+
+  .pot-breakdown-box,
+  .showdown-summary-box {
+    gap: 2px;
+    margin-bottom: 4px;
+    max-width: 176px;
+  }
+
+  .pot-breakdown-row,
+  .showdown-summary-row {
+    gap: 5px;
+    padding: 3px 5px;
+    border-radius: 7px;
+    font-size: 8px;
+    line-height: 1.1;
+  }
+
+  .showdown-summary-box {
+    margin-top: 4px;
+  }
+
+  .showdown-summary-row em {
+    font-size: 7px;
   }
 
   .community-block {
