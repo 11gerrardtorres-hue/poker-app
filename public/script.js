@@ -30,16 +30,9 @@ const applySettingsBtn = document.getElementById("applySettingsBtn");
 
 const playersLayer = document.getElementById("playersLayer");
 const resultBox = document.getElementById("resultBox");
-const potBox = document.getElementById("potBox");
 const potCenterValue = document.getElementById("potCenterValue");
-const turnBox = document.getElementById("turnBox");
-const turnBanner = document.getElementById("turnBanner");
-const streetBox = document.getElementById("streetBox");
 const roomInfoBox = document.getElementById("roomInfoBox");
 const blindBox = document.getElementById("blindBox");
-const logBox = document.getElementById("logBox");
-const logPanel = document.getElementById("logPanel");
-const toggleLogPanelBtn = document.getElementById("toggleLogPanelBtn");
 
 const nameInput = document.getElementById("name");
 const roomCodeInput = document.getElementById("roomCodeInput");
@@ -77,7 +70,6 @@ let latestRoomInfo = {
     bigBlind: 200
   }
 };
-let isLogPanelCollapsed = false;
 
 function sendKeepAlive() {
   if (socket.connected) {
@@ -181,12 +173,6 @@ function updateRaiseUi(state) {
   setRaiseAmount(currentValue);
 }
 
-function updateLogPanelUi() {
-  if (!logPanel || !toggleLogPanelBtn) return;
-  logPanel.classList.toggle("collapsed", isLogPanelCollapsed);
-  toggleLogPanelBtn.textContent = isLogPanelCollapsed ? "펼치기" : "접기";
-}
-
 function getActionType(entry) {
   if (entry.includes("폴드")) return "fold";
   if (entry.includes("체크")) return "check";
@@ -227,79 +213,6 @@ function parseLogEntry(entry) {
   return { type, name, action, amount };
 }
 
-function renderLogRow(entry, options = {}) {
-  const parsed = parseLogEntry(entry);
-  const classes = ["log-row"];
-  if (options.isLatest) classes.push("latest");
-  if (options.isMine) classes.push("mine");
-  if (options.isImportant) classes.push("important");
-
-  if (parsed.type === "system") {
-    return `
-      <div class="${classes.join(" ")}">
-        <span class="log-pill system">${entry}</span>
-      </div>
-    `;
-  }
-
-  const amountHtml = parsed.amount
-    ? `<span class="log-pill amount">${parsed.amount}</span>`
-    : "";
-
-  return `
-    <div class="${classes.join(" ")}">
-      <span class="log-pill name">${parsed.name}</span>
-      <span class="log-pill ${parsed.type}">${parsed.action}</span>
-      ${amountHtml}
-    </div>
-  `;
-}
-
-function renderLogs(logs) {
-  if (!logBox) return;
-  logBox.innerHTML = "";
-
-  if (!logs || logs.length === 0) {
-    logBox.innerHTML = `<div class="log-empty">아직 로그 없음</div>`;
-    return;
-  }
-
-  let globalEntries = [];
-  logs.forEach(group => {
-    group.entries.forEach(entry => globalEntries.push({ street: group.street, entry }));
-  });
-
-  const latestEntry = globalEntries.length > 0 ? globalEntries[globalEntries.length - 1].entry : "";
-
-  logs.forEach((group) => {
-    const streetDiv = document.createElement("div");
-    streetDiv.className = "log-street-card";
-
-    const entriesHtml = group.entries.length > 0
-      ? group.entries.map((entry) => {
-          const parsed = parseLogEntry(entry);
-          const myName = latestState?.players?.find(p => p.isMe)?.name || "";
-          return renderLogRow(entry, {
-            isLatest: entry === latestEntry,
-            isMine: !!myName && parsed.name === myName,
-            isImportant: parsed.type === "raise" || parsed.type === "allin"
-          });
-        }).join("")
-      : `<div class="log-empty">행동 없음</div>`;
-
-    streetDiv.innerHTML = `
-      <div class="log-street-header">
-        <div class="log-street-title">${group.street}</div>
-      </div>
-      <div class="log-street-body">
-        ${entriesHtml}
-      </div>
-    `;
-
-    logBox.appendChild(streetDiv);
-  });
-}
-
 function updateCallButton(state) {
   const need = Math.max((state.currentBet || 0) - (state.myRoundBet || 0), 0);
   if (need === 0) {
@@ -313,12 +226,6 @@ function updateCallButton(state) {
   }
 
   callBtn.textContent = `Call ${formatNumber(need)}`;
-}
-
-function updateTurnBanner(state) {
-  const turnName = state.currentTurnName || "-";
-  if (turnBox) turnBox.textContent = `현재 턴: ${turnName}`;
-  if (turnBanner) turnBanner.textContent = `현재 턴: ${turnName}`;
 }
 
 function updateRoomInfo() {
@@ -463,18 +370,12 @@ function renderState(state) {
   latestState = state;
   updateRaiseUi(state);
   updateCallButton(state);
-  updateTurnBanner(state);
-  updateLogPanelUi();
   updateRoomInfo();
   updateRevealModal(state);
   renderPlayerChipSettings(state);
 
-  if (potBox) potBox.textContent = `팟: ${formatNumber(state.pot)}`;
   potCenterValue.textContent = formatNumber(state.pot);
-  if (streetBox) streetBox.textContent = `단계: ${state.street}`;
   resultBox.textContent = state.result || "";
-
-  renderLogs(state.actionLogs);
 
   playersLayer.innerHTML = "";
 
@@ -614,13 +515,6 @@ raiseAmountInput.addEventListener("input", () => {
   setRaiseAmount(raiseAmountInput.value);
 });
 
-if (toggleLogPanelBtn) {
-  toggleLogPanelBtn.onclick = () => {
-    isLogPanelCollapsed = !isLogPanelCollapsed;
-    updateLogPanelUi();
-  };
-}
-
 applySettingsBtn.onclick = () => {
   const smallBlind = Number(smallBlindInput.value);
   const bigBlind = Number(bigBlindInput.value);
@@ -706,13 +600,8 @@ socket.on("roomInfo", (roomInfo) => {
   if (!roomInfo.inRoom) {
     playersLayer.innerHTML = "";
     resultBox.textContent = "";
-    if (potBox) potBox.textContent = "팟: 0";
     potCenterValue.textContent = "0";
-    if (turnBox) turnBox.textContent = "현재 턴: -";
-    if (turnBanner) turnBanner.textContent = "현재 턴: -";
-    if (streetBox) streetBox.textContent = "단계: 대기중";
     blindBox.textContent = `블라인드: ${formatNumber(roomInfo.settings.smallBlind)} / ${formatNumber(roomInfo.settings.bigBlind)}`;
-    if (logBox) logBox.innerHTML = `<div class="log-empty">방에 입장하면 로그가 표시됩니다</div>`;
     revealDecisionModal.classList.add("hidden");
 
     startBtn.disabled = true;
