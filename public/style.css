@@ -1057,7 +1057,7 @@ body {
   }
 
   .me-seat .player-card {
-    padding: 4px;
+    padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
@@ -1074,6 +1074,7 @@ body {
 
   .me-seat .player-chip-row {
     gap: 2px;
+    margin-top: 1px;
   }
 
   .me-seat .player-chip-delta {
@@ -1083,8 +1084,13 @@ body {
   }
 
   .me-seat .player-cards {
-    margin-top: 2px;
-    gap: 3px;
+    margin-top: 1px;
+    gap: 2px;
+  }
+
+  .me-seat .player-badges {
+    min-height: 7px;
+    margin-top: 1px;
   }
 
   .me-seat .player-extra:empty,
@@ -1095,9 +1101,15 @@ body {
   .me-seat .player-extra,
   .me-seat .player-delta {
     min-height: 0;
-    margin-top: 1px;
+    margin-top: 0;
     font-size: 6px;
-    line-height: 1.05;
+    line-height: 1;
+  }
+
+  .me-seat .player-last-action {
+    min-height: 9px;
+    margin-top: 1px;
+    padding: 1px 3px;
   }
 
   .player-seat .small-card,
@@ -1616,7 +1628,7 @@ body {
   }
 
   .me-seat .player-card {
-    padding: 4px;
+    padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
   }
@@ -1633,6 +1645,7 @@ body {
 
   .me-seat .player-chip-row {
     gap: 2px;
+    margin-top: 1px;
   }
 
   .me-seat .player-chip-delta {
@@ -1642,8 +1655,13 @@ body {
   }
 
   .me-seat .player-cards {
-    margin-top: 2px;
-    gap: 3px;
+    margin-top: 1px;
+    gap: 2px;
+  }
+
+  .me-seat .player-badges {
+    min-height: 7px;
+    margin-top: 1px;
   }
 
   .me-seat .player-extra:empty,
@@ -1654,9 +1672,15 @@ body {
   .me-seat .player-extra,
   .me-seat .player-delta {
     min-height: 0;
-    margin-top: 1px;
+    margin-top: 0;
     font-size: 6px;
-    line-height: 1.05;
+    line-height: 1;
+  }
+
+  .me-seat .player-last-action {
+    min-height: 9px;
+    margin-top: 1px;
+    padding: 1px 3px;
   }
 
   .player-seat .small-card,
