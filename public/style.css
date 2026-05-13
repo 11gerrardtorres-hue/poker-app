@@ -416,10 +416,7 @@ body {
 
 .current-turn .opponent-avatar-img {
   border-color: rgba(251, 191, 36, 0.95);
-  box-shadow:
-    0 0 0 3px rgba(251, 191, 36, 0.16),
-    0 0 22px rgba(251, 191, 36, 0.18),
-    0 8px 18px rgba(0, 0, 0, 0.24);
+  animation: currentAvatarPulse 1.08s infinite ease-in-out;
 }
 
 .winner .opponent-avatar-img {
@@ -471,7 +468,7 @@ body {
     0 0 0 3px rgba(251, 191, 36, 0.12),
     0 0 24px rgba(251, 191, 36, 0.12),
     0 12px 26px rgba(0, 0, 0, 0.20);
-  animation: currentTurnPulse 0.95s infinite alternate;
+  animation: currentTurnPulse 1.08s infinite ease-in-out;
 }
 
 .current-turn-badge {
@@ -491,17 +488,47 @@ body {
 }
 
 @keyframes currentTurnPulse {
-  from {
+  0% {
     box-shadow:
       0 0 0 2px rgba(251, 191, 36, 0.10),
       0 0 10px rgba(251, 191, 36, 0.04),
       0 12px 24px rgba(0, 0, 0, 0.16);
   }
-  to {
+  50% {
     box-shadow:
-      0 0 0 4px rgba(251, 191, 36, 0.20),
-      0 0 24px rgba(251, 191, 36, 0.16),
+      0 0 0 4px rgba(251, 191, 36, 0.24),
+      0 0 20px rgba(251, 191, 36, 0.20),
       0 14px 28px rgba(0, 0, 0, 0.24);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.10),
+      0 0 10px rgba(251, 191, 36, 0.04),
+      0 12px 24px rgba(0, 0, 0, 0.16);
+  }
+}
+
+@keyframes currentAvatarPulse {
+  0% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.14),
+      0 0 12px rgba(251, 191, 36, 0.10),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(251, 191, 36, 0.26),
+      0 0 22px rgba(251, 191, 36, 0.24),
+      0 9px 20px rgba(0, 0, 0, 0.24);
+    filter: brightness(1.12);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.14),
+      0 0 12px rgba(251, 191, 36, 0.10),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1);
   }
 }
 
@@ -757,7 +784,7 @@ body {
 
 .raise-popover-actions {
   display: grid;
-  grid-template-columns: 1fr 42px 42px 1fr;
+  grid-template-columns: 1fr 1fr 42px 42px;
   gap: 8px;
   margin-top: 10px;
 }
@@ -1131,6 +1158,7 @@ body {
   }
 
   .me-seat .player-card {
+    min-height: 70px;
     padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
@@ -1714,6 +1742,7 @@ body {
   }
 
   .me-seat .player-card {
+    min-height: 70px;
     padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
