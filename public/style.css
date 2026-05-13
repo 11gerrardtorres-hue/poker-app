@@ -757,7 +757,7 @@ body {
 
 .raise-popover-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 42px 42px 1fr;
   gap: 8px;
   margin-top: 10px;
 }
@@ -768,6 +768,14 @@ body {
   border-radius: 10px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.raise-step-button {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.18);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .actions {
