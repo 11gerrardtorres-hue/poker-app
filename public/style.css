@@ -707,7 +707,7 @@ body {
 .raise-popover {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 18px);
   z-index: 20;
   display: grid;
   grid-template-columns: 1fr;

@@ -60,9 +60,12 @@ const HEARTBEAT_INTERVAL_MS = 25000;
 const OPPONENT_AVATAR_DEFAULT = "assets/player-default.png";
 const OPPONENT_AVATAR_WIN = "assets/player-win.jpeg";
 const OPPONENT_AVATAR_LOSE = "assets/player-lose.webp";
+const RAISE_STEP = 100;
 
 let previousCommunity = ["", "", "", "", ""];
 let latestState = null;
+let raiseStepHoldTimer = null;
+let raiseStepHoldInterval = null;
 let latestRoomInfo = {
   inRoom: false,
   roomCode: "",
@@ -173,6 +176,7 @@ function setRaiseAmount(value) {
 
   raiseAmountInput.value = next;
   raiseAmountText.textContent = formatNumber(next);
+  updateRaiseStepButtons();
 }
 
 function setRaisePopupOpen(open) {
@@ -188,6 +192,18 @@ function changeRaiseAmount(delta) {
   setRaiseAmount(Number(raiseAmountInput.value) + delta);
 }
 
+function updateRaiseStepButtons() {
+  if (!decreaseRaiseBtn || !increaseRaiseBtn) return;
+
+  const disabled = raiseAmountInput.disabled;
+  const value = Number(raiseAmountInput.value);
+  const min = Number(raiseAmountInput.min);
+  const max = Number(raiseAmountInput.max);
+
+  decreaseRaiseBtn.disabled = disabled || value <= min;
+  increaseRaiseBtn.disabled = disabled || value >= max;
+}
+
 function openRaisePopup() {
   if (!latestState || raiseBtn.disabled) return;
   resetRaiseAmountToMinimum();
@@ -195,7 +211,23 @@ function openRaisePopup() {
 }
 
 function closeRaisePopup() {
+  stopRaiseStepHold();
   setRaisePopupOpen(false);
+}
+
+function stopRaiseStepHold() {
+  if (raiseStepHoldTimer) clearTimeout(raiseStepHoldTimer);
+  if (raiseStepHoldInterval) clearInterval(raiseStepHoldInterval);
+  raiseStepHoldTimer = null;
+  raiseStepHoldInterval = null;
+}
+
+function startRaiseStepHold(delta) {
+  stopRaiseStepHold();
+  changeRaiseAmount(delta);
+  raiseStepHoldTimer = setTimeout(() => {
+    raiseStepHoldInterval = setInterval(() => changeRaiseAmount(delta), 90);
+  }, 340);
 }
 
 function updateRaiseUi(state) {
@@ -360,8 +392,7 @@ function updateBottomButtons(state) {
 
   raiseAmountInput.disabled = !canRaise || handFinished;
   if (confirmRaiseBtn) confirmRaiseBtn.disabled = !canRaise || handFinished;
-  if (decreaseRaiseBtn) decreaseRaiseBtn.disabled = !canRaise || handFinished;
-  if (increaseRaiseBtn) increaseRaiseBtn.disabled = !canRaise || handFinished;
+  updateRaiseStepButtons();
   updateSettingsControls(state);
 }
 
@@ -643,8 +674,27 @@ confirmRaiseBtn.onclick = () => {
   closeRaisePopup();
 };
 cancelRaiseBtn.onclick = () => closeRaisePopup();
-decreaseRaiseBtn.onclick = () => changeRaiseAmount(-100);
-increaseRaiseBtn.onclick = () => changeRaiseAmount(100);
+decreaseRaiseBtn.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  if (decreaseRaiseBtn.disabled) return;
+  startRaiseStepHold(-RAISE_STEP);
+});
+increaseRaiseBtn.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  if (increaseRaiseBtn.disabled) return;
+  startRaiseStepHold(RAISE_STEP);
+});
+decreaseRaiseBtn.addEventListener("click", (event) => event.preventDefault());
+increaseRaiseBtn.addEventListener("click", (event) => event.preventDefault());
+["pointerup", "pointercancel", "pointerleave", "blur"].forEach((eventName) => {
+  decreaseRaiseBtn.addEventListener(eventName, stopRaiseStepHold);
+  increaseRaiseBtn.addEventListener(eventName, stopRaiseStepHold);
+});
+document.addEventListener("pointerdown", (event) => {
+  if (raisePopup.classList.contains("hidden")) return;
+  if (raisePopup.contains(event.target) || raiseBtn.contains(event.target)) return;
+  closeRaisePopup();
+});
 allInBtn.onclick = () => {
   closeRaisePopup();
   socket.emit("allIn");
