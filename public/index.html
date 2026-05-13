@@ -68,14 +68,13 @@
           <div class="control-title">베팅</div>
 
           <div id="raisePopup" class="bet-box raise-popover hidden">
-            <label for="raiseAmount">레이즈 금액</label>
             <input id="raiseAmount" type="range" min="200" max="10000" step="100" value="200">
-            <div id="raiseAmountText" class="bet-value">200</div>
             <div class="raise-popover-actions">
               <button id="confirmRaiseBtn" class="action-primary">확인</button>
+              <button id="cancelRaiseBtn" class="action-secondary">취소</button>
               <button id="decreaseRaiseBtn" class="raise-step-button" aria-label="레이즈 100 감소">-</button>
               <button id="increaseRaiseBtn" class="raise-step-button" aria-label="레이즈 100 증가">+</button>
-              <button id="cancelRaiseBtn" class="action-secondary">취소</button>
+              <div id="raiseAmountText" class="bet-value">200</div>
             </div>
           </div>
 

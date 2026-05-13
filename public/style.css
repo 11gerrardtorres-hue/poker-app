@@ -416,10 +416,7 @@ body {
 
 .current-turn .opponent-avatar-img {
   border-color: rgba(251, 191, 36, 0.95);
-  box-shadow:
-    0 0 0 3px rgba(251, 191, 36, 0.16),
-    0 0 22px rgba(251, 191, 36, 0.18),
-    0 8px 18px rgba(0, 0, 0, 0.24);
+  animation: currentAvatarPulse 1.08s infinite ease-in-out;
 }
 
 .winner .opponent-avatar-img {
@@ -471,7 +468,7 @@ body {
     0 0 0 3px rgba(251, 191, 36, 0.12),
     0 0 24px rgba(251, 191, 36, 0.12),
     0 12px 26px rgba(0, 0, 0, 0.20);
-  animation: currentTurnPulse 0.95s infinite alternate;
+  animation: currentTurnPulse 1.08s infinite ease-in-out;
 }
 
 .current-turn-badge {
@@ -491,17 +488,47 @@ body {
 }
 
 @keyframes currentTurnPulse {
-  from {
+  0% {
     box-shadow:
       0 0 0 2px rgba(251, 191, 36, 0.10),
       0 0 10px rgba(251, 191, 36, 0.04),
       0 12px 24px rgba(0, 0, 0, 0.16);
   }
-  to {
+  50% {
     box-shadow:
-      0 0 0 4px rgba(251, 191, 36, 0.20),
-      0 0 24px rgba(251, 191, 36, 0.16),
+      0 0 0 4px rgba(251, 191, 36, 0.24),
+      0 0 20px rgba(251, 191, 36, 0.20),
       0 14px 28px rgba(0, 0, 0, 0.24);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.10),
+      0 0 10px rgba(251, 191, 36, 0.04),
+      0 12px 24px rgba(0, 0, 0, 0.16);
+  }
+}
+
+@keyframes currentAvatarPulse {
+  0% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.14),
+      0 0 12px rgba(251, 191, 36, 0.10),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(251, 191, 36, 0.26),
+      0 0 22px rgba(251, 191, 36, 0.24),
+      0 9px 20px rgba(0, 0, 0, 0.24);
+    filter: brightness(1.12);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.14),
+      0 0 12px rgba(251, 191, 36, 0.10),
+      0 8px 18px rgba(0, 0, 0, 0.22);
+    filter: brightness(1);
   }
 }
 
@@ -682,7 +709,10 @@ body {
   left: 50%;
   bottom: calc(100% + 8px);
   z-index: 20;
-  width: min(360px, calc(100vw - 24px));
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: min(520px, calc(100vw - 24px));
   transform: translateX(-50%);
   background: rgba(15, 23, 42, 0.96);
   border-color: rgba(251, 191, 36, 0.24);
@@ -749,7 +779,10 @@ body {
 }
 
 .bet-value {
-  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
   font-size: 16px;
   font-weight: 800;
   color: #fde68a;
@@ -757,9 +790,10 @@ body {
 
 .raise-popover-actions {
   display: grid;
-  grid-template-columns: 1fr 42px 42px 1fr;
+  grid-template-columns: 1fr 1fr 42px 42px minmax(66px, auto);
+  align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .raise-popover-actions button {
@@ -1131,6 +1165,7 @@ body {
   }
 
   .me-seat .player-card {
+    min-height: 70px;
     padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
@@ -1265,8 +1300,9 @@ body {
   }
 
   .raise-popover {
-    display: block;
-    width: min(330px, calc(100vw - 16px));
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(430px, calc(100vw - 16px));
     padding: 8px;
   }
 
@@ -1276,6 +1312,7 @@ body {
 
   .raise-popover-actions {
     grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr 34px 34px minmax(52px, auto);
     margin-top: 0;
     gap: 5px;
   }
@@ -1294,9 +1331,9 @@ body {
 
   .bet-value {
     margin: 0;
-    min-width: 40px;
+    min-width: 52px;
     font-size: 11px;
-    text-align: right;
+    text-align: center;
   }
 
   .bet-box input[type="range"]::-webkit-slider-runnable-track {
@@ -1714,6 +1751,7 @@ body {
   }
 
   .me-seat .player-card {
+    min-height: 70px;
     padding: 3px 4px;
     background: rgba(12, 25, 45, 0.94);
     border-color: rgba(251, 191, 36, 0.26);
@@ -1847,6 +1885,30 @@ body {
     border-radius: 10px;
   }
 
+  .raise-popover {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(430px, calc(100vw - 16px));
+    padding: 8px;
+  }
+
+  .raise-popover.hidden {
+    display: none !important;
+  }
+
+  .raise-popover-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr 34px 34px minmax(52px, auto);
+    margin-top: 0;
+    gap: 5px;
+  }
+
+  .raise-popover-actions button {
+    min-height: 30px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
   .bet-box label {
     margin: 0;
     font-size: 10px;
@@ -1855,9 +1917,9 @@ body {
 
   .bet-value {
     margin: 0;
-    min-width: 40px;
+    min-width: 52px;
     font-size: 11px;
-    text-align: right;
+    text-align: center;
   }
 
   .bet-box input[type="range"]::-webkit-slider-runnable-track {

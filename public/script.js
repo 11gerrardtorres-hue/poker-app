@@ -112,7 +112,7 @@ function getSeatPositions(count) {
     window.innerWidth <= 950 && window.innerHeight < window.innerWidth;
 
   if (isPortraitMobile) {
-    const seats = [{ left: 50, top: 81 }];
+    const seats = [{ left: 50, top: 82 }];
     const opponentCount = Math.max(count - 1, 0);
     const startAngle = 200;
     const endAngle = 340;
@@ -135,13 +135,13 @@ function getSeatPositions(count) {
 
   if (isLandscapeMobile) {
     const landscapeMap = {
-      2: [{ left: 50, top: 80 }, { left: 50, top: 16 }],
-      3: [{ left: 50, top: 80 }, { left: 19, top: 23 }, { left: 81, top: 23 }],
-      4: [{ left: 50, top: 80 }, { left: 10, top: 58 }, { left: 22, top: 20 }, { left: 78, top: 20 }],
-      5: [{ left: 50, top: 80 }, { left: 10, top: 61 }, { left: 21, top: 21 }, { left: 50, top: 14 }, { left: 79, top: 21 }],
-      6: [{ left: 50, top: 80 }, { left: 9, top: 62 }, { left: 10, top: 38 }, { left: 35, top: 15 }, { left: 65, top: 15 }, { left: 90, top: 38 }],
-      7: [{ left: 50, top: 80 }, { left: 9, top: 64 }, { left: 8, top: 42 }, { left: 22, top: 20 }, { left: 50, top: 13 }, { left: 78, top: 20 }, { left: 92, top: 42 }],
-      8: [{ left: 50, top: 80 }, { left: 9, top: 65 }, { left: 8, top: 44 }, { left: 19, top: 21 }, { left: 38, top: 13 }, { left: 62, top: 13 }, { left: 81, top: 21 }, { left: 92, top: 44 }]
+      2: [{ left: 50, top: 81 }, { left: 50, top: 16 }],
+      3: [{ left: 50, top: 81 }, { left: 19, top: 23 }, { left: 81, top: 23 }],
+      4: [{ left: 50, top: 81 }, { left: 10, top: 58 }, { left: 22, top: 20 }, { left: 78, top: 20 }],
+      5: [{ left: 50, top: 81 }, { left: 10, top: 61 }, { left: 21, top: 21 }, { left: 50, top: 14 }, { left: 79, top: 21 }],
+      6: [{ left: 50, top: 81 }, { left: 9, top: 62 }, { left: 10, top: 38 }, { left: 35, top: 15 }, { left: 65, top: 15 }, { left: 90, top: 38 }],
+      7: [{ left: 50, top: 81 }, { left: 9, top: 64 }, { left: 8, top: 42 }, { left: 22, top: 20 }, { left: 50, top: 13 }, { left: 78, top: 20 }, { left: 92, top: 42 }],
+      8: [{ left: 50, top: 81 }, { left: 9, top: 65 }, { left: 8, top: 44 }, { left: 19, top: 21 }, { left: 38, top: 13 }, { left: 62, top: 13 }, { left: 81, top: 21 }, { left: 92, top: 44 }]
     };
 
     return landscapeMap[count] || landscapeMap[8];
