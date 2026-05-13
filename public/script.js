@@ -29,6 +29,8 @@ const showdownBtn = document.getElementById("showdownBtn");
 const applySettingsBtn = document.getElementById("applySettingsBtn");
 const confirmRaiseBtn = document.getElementById("confirmRaiseBtn");
 const cancelRaiseBtn = document.getElementById("cancelRaiseBtn");
+const decreaseRaiseBtn = document.getElementById("decreaseRaiseBtn");
+const increaseRaiseBtn = document.getElementById("increaseRaiseBtn");
 
 const playersLayer = document.getElementById("playersLayer");
 const resultBox = document.getElementById("resultBox");
@@ -180,6 +182,10 @@ function setRaisePopupOpen(open) {
 
 function resetRaiseAmountToMinimum() {
   setRaiseAmount(Number(raiseAmountInput.min));
+}
+
+function changeRaiseAmount(delta) {
+  setRaiseAmount(Number(raiseAmountInput.value) + delta);
 }
 
 function openRaisePopup() {
@@ -354,6 +360,8 @@ function updateBottomButtons(state) {
 
   raiseAmountInput.disabled = !canRaise || handFinished;
   if (confirmRaiseBtn) confirmRaiseBtn.disabled = !canRaise || handFinished;
+  if (decreaseRaiseBtn) decreaseRaiseBtn.disabled = !canRaise || handFinished;
+  if (increaseRaiseBtn) increaseRaiseBtn.disabled = !canRaise || handFinished;
   updateSettingsControls(state);
 }
 
@@ -635,6 +643,8 @@ confirmRaiseBtn.onclick = () => {
   closeRaisePopup();
 };
 cancelRaiseBtn.onclick = () => closeRaisePopup();
+decreaseRaiseBtn.onclick = () => changeRaiseAmount(-100);
+increaseRaiseBtn.onclick = () => changeRaiseAmount(100);
 allInBtn.onclick = () => {
   closeRaisePopup();
   socket.emit("allIn");
