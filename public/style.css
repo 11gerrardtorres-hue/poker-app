@@ -709,7 +709,10 @@ body {
   left: 50%;
   bottom: calc(100% + 8px);
   z-index: 20;
-  width: min(360px, calc(100vw - 24px));
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: min(520px, calc(100vw - 24px));
   transform: translateX(-50%);
   background: rgba(15, 23, 42, 0.96);
   border-color: rgba(251, 191, 36, 0.24);
@@ -776,7 +779,10 @@ body {
 }
 
 .bet-value {
-  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
   font-size: 16px;
   font-weight: 800;
   color: #fde68a;
@@ -784,9 +790,10 @@ body {
 
 .raise-popover-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 42px 42px;
+  grid-template-columns: 1fr 1fr 42px 42px minmax(66px, auto);
+  align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .raise-popover-actions button {
@@ -1293,8 +1300,9 @@ body {
   }
 
   .raise-popover {
-    display: block;
-    width: min(330px, calc(100vw - 16px));
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(430px, calc(100vw - 16px));
     padding: 8px;
   }
 
@@ -1304,6 +1312,7 @@ body {
 
   .raise-popover-actions {
     grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr 34px 34px minmax(52px, auto);
     margin-top: 0;
     gap: 5px;
   }
@@ -1322,9 +1331,9 @@ body {
 
   .bet-value {
     margin: 0;
-    min-width: 40px;
+    min-width: 52px;
     font-size: 11px;
-    text-align: right;
+    text-align: center;
   }
 
   .bet-box input[type="range"]::-webkit-slider-runnable-track {
@@ -1876,6 +1885,30 @@ body {
     border-radius: 10px;
   }
 
+  .raise-popover {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(430px, calc(100vw - 16px));
+    padding: 8px;
+  }
+
+  .raise-popover.hidden {
+    display: none !important;
+  }
+
+  .raise-popover-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr 34px 34px minmax(52px, auto);
+    margin-top: 0;
+    gap: 5px;
+  }
+
+  .raise-popover-actions button {
+    min-height: 30px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
   .bet-box label {
     margin: 0;
     font-size: 10px;
@@ -1884,9 +1917,9 @@ body {
 
   .bet-value {
     margin: 0;
-    min-width: 40px;
+    min-width: 52px;
     font-size: 11px;
-    text-align: right;
+    text-align: center;
   }
 
   .bet-box input[type="range"]::-webkit-slider-runnable-track {
