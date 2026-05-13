@@ -1372,6 +1372,73 @@ body {
     box-shadow: none;
   }
 }
+
+.raise-popover {
+  bottom: calc(100% + 24px);
+  padding: 16px;
+  gap: 14px;
+}
+
+.raise-popover input[type="range"] {
+  min-height: 40px;
+}
+
+.raise-popover input[type="range"]::-webkit-slider-runnable-track {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.raise-popover input[type="range"]::-webkit-slider-thumb {
+  width: 34px;
+  height: 34px;
+  margin-top: -10px;
+  border-width: 3px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.30);
+}
+
+.raise-popover input[type="range"]::-moz-range-track {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.raise-popover input[type="range"]::-moz-range-thumb {
+  width: 34px;
+  height: 34px;
+  border-width: 3px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.30);
+}
+
+@media (max-width: 900px) {
+  .raise-popover {
+    width: min(430px, calc(100vw - 16px));
+    padding: 14px 12px;
+  }
+
+  .raise-popover input[type="range"] {
+    min-height: 44px;
+  }
+
+  .raise-popover input[type="range"]::-webkit-slider-runnable-track {
+    height: 16px;
+  }
+
+  .raise-popover input[type="range"]::-webkit-slider-thumb {
+    width: 40px;
+    height: 40px;
+    margin-top: -12px;
+  }
+
+  .raise-popover input[type="range"]::-moz-range-track {
+    height: 16px;
+  }
+
+  .raise-popover input[type="range"]::-moz-range-thumb {
+    width: 40px;
+    height: 40px;
+  }
+}
 /* ===== 버튼 UX 업그레이드 ===== */
 .actions button {
   min-height: 52px;
