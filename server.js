@@ -181,6 +181,18 @@ function getPositionLabel(room, playerIndex) {
   return "";
 }
 
+function assignHandPositions(room) {
+  const sbIndex = room.players.length >= 2 ? getSmallBlindIndex(room) : -1;
+  const bbIndex = room.players.length >= 2 ? getBigBlindIndex(room) : -1;
+
+  room.players.forEach((player, index) => {
+    player.isHandDealer = index === room.dealerIndex;
+    player.isHandSmallBlind = index === sbIndex;
+    player.isHandBigBlind = index === bbIndex;
+    player.handPositionLabel = getPositionLabel(room, index);
+  });
+}
+
 function orderedActionableIdsFrom(room, startIndex, excludeId = null) {
   const ids = [];
   for (let offset = 0; offset < room.players.length; offset++) {
@@ -864,6 +876,7 @@ function startHand(room, resetStacks) {
     p.chipChangeText = "";
   });
 
+  assignHandPositions(room);
   startLogStreet(room, "프리플랍");
   postBlinds(room);
 }
@@ -943,9 +956,6 @@ function sendRoomInfo(socket, room) {
 }
 
 function sendState(room) {
-  const sbIndex = room.players.length >= 2 ? getSmallBlindIndex(room) : -1;
-  const bbIndex = room.players.length >= 2 ? getBigBlindIndex(room) : -1;
-
   room.players.forEach((player) => {
     const socket = io.sockets.sockets.get(player.id);
     if (!socket) return;
@@ -988,10 +998,10 @@ function sendState(room) {
           folded: p.folded,
           isCurrentTurn: room.bettingOpen && room.mustActIds.length > 0 && room.mustActIds[0] === p.id,
           isMe: p.id === meId,
-          isDealer: i === room.dealerIndex,
-          isSmallBlind: i === sbIndex,
-          isBigBlind: i === bbIndex,
-          positionLabel: getPositionLabel(room, i),
+          isDealer: !!p.isHandDealer,
+          isSmallBlind: !!p.isHandSmallBlind,
+          isBigBlind: !!p.isHandBigBlind,
+          positionLabel: p.handPositionLabel || "",
           roundBetText: room.street !== "리버완료" && p.roundBet > 0 ? `이번 라운드: ${p.roundBet}` : "",
           handName: visibleAtShowdown || p.id === meId ? p.lastHandName : "",
           potWinText: room.street === "리버완료" ? p.potWinText : "",
