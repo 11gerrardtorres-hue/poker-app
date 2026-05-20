@@ -821,61 +821,151 @@ button, input { font: inherit; }
 /* ── RESPONSIVE: PORTRAIT MOBILE ────────────────────────── */
 @media (max-width: 900px) and (orientation: portrait) {
   html, body { height: 100%; overflow: hidden; }
+
+  /* FIX: tight shell — no wasted space */
   .app-shell {
     width: 100%; height: 100svh; margin: 0;
-    padding: max(5px, env(safe-area-inset-top)) 8px max(5px, env(safe-area-inset-bottom));
-    gap: 5px; overflow: hidden;
+    padding: max(4px, env(safe-area-inset-top)) 6px max(4px, env(safe-area-inset-bottom));
+    gap: 4px; overflow: hidden;
+    display: flex; flex-direction: column;
   }
-  .topbar { flex-wrap: nowrap; padding: 8px 12px; }
-  .brand-title { font-size: 18px; }
+
+  /* topbar minimal */
+  .topbar { flex-wrap: nowrap; padding: 6px 10px; border-radius: 12px; }
+  .brand-title { font-size: 16px; }
   .brand-subtitle { display: none; }
-  .status-chip { padding: 5px 8px; font-size: 10px; }
-  .room-panel { gap: 4px; padding: 6px 10px; }
+  .status-chip { padding: 4px 8px; font-size: 9px; }
+
+  /* entry panel: compact single row */
+  .room-panel { gap: 4px; padding: 5px 8px; border-radius: 10px; }
   .room-entry-panel { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); }
   #name, #roomCodeInput { grid-column: span 3; }
   .btn-create, .btn-join, .btn-leave { grid-column: span 2; }
-  .room-panel input, .room-panel button { min-height: 30px; padding: 6px 6px; font-size: 10px; border-radius: 8px; }
+  .room-panel input, .room-panel button {
+    min-height: 28px; padding: 4px 5px;
+    font-size: 10px; border-radius: 8px;
+  }
   #settingsPanel { grid-template-columns: 1fr 1fr 1.2fr; }
   .player-chip-settings { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px; }
-  .main-layout { flex: 1; min-height: 0; }
-  .table-section { display: flex; flex-direction: column; min-height: 0; }
-  .table-card { flex: 1; min-height: 0; padding: 6px; border-radius: 16px; }
+
+  /* FIX 2 & 3: table grows to fill remaining space, buttons never overlap */
+  .main-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .table-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .table-card { flex: 1; min-height: 0; padding: 5px; border-radius: 14px; overflow: hidden; }
+
+  /* table height responds to actual remaining viewport space */
   .poker-table {
-    height: clamp(320px, calc(100svh - 294px), 430px);
-    min-height: 0; border-radius: 40px;
+    width: 100%; height: 100%;
+    min-height: 0; border-radius: 36px;
+    box-shadow:
+      0 0 0 2px var(--gold-dark),
+      0 0 0 10px var(--rail),
+      0 0 0 12px var(--rail-light),
+      0 20px 40px rgba(0,0,0,0.7);
   }
-  body.game-active .poker-table { height: clamp(360px, calc(100svh - 232px), 520px); }
-  .players-layer { height: 100%; min-height: 0; }
-  .table-center { width: 190px; max-width: 54%; top: 48%; }
-  .pot-pill { padding: 4px 10px; min-width: 80px; }
-  .pot-pill-value { font-size: 16px; }
+  .players-layer { width: 100%; height: 100%; min-height: 0; }
+
+  /* center content: smaller so it never covers players */
+  .table-center { width: 170px; max-width: 52%; top: 48%; }
+  .pot-pill { padding: 3px 10px; min-width: 70px; margin-bottom: 6px; }
+  .pot-pill-label { font-size: 8px; letter-spacing: 2px; }
+  .pot-pill-value { font-size: 14px; }
+  .community-block { padding: 6px 8px; border-radius: 12px; }
   .community-title { display: none; }
   .community-cards { gap: 3px; }
-  .card-slot { width: 27px; height: 38px; border-radius: 5px; font-size: 10px; }
-  .result-box { font-size: 10px; }
-  .player-seat { width: 72px; }
-  .player-card { padding: 4px 5px; border-radius: 10px; }
-  .player-name { font-size: 8px; }
-  .player-chip-pill { font-size: 7px; padding: 1px 5px; }
-  .badge { font-size: 6px; padding: 1px 3px; }
+  .card-slot { width: 25px; height: 35px; border-radius: 4px; font-size: 9px; }
+  .result-box { font-size: 9px; margin-top: 4px; min-height: 14px; }
+
+  /* FIX 4: opponent — avatar only, NO badge duplication
+     show just avatar + name + chips pill. hide badges row (shown in avatar area) */
+  .player-seat { width: 60px; }
+  .opponent-avatar-card { gap: 2px; }
+  .opponent-avatar-img { width: 36px; height: 36px; border-width: 2px; }
+  .opponent-avatar-info { padding: 2px 6px; }
+  .opponent-avatar-name { font-size: 8px; max-width: 54px; }
+  .opponent-avatar-chips { font-size: 7px; max-width: 54px; }
+  .opponent-avatar-cards { gap: 2px; }
+
+  /* hide badges on opponent seats entirely (badge is duplicated — shown once in info row) */
+  .player-seat:not(.me-seat) .player-badges { display: none; }
+
+  /* show SB/BB/D as a tiny overlay on the avatar instead */
+  .player-seat:not(.me-seat) .opponent-avatar-card { position: relative; }
+  .player-seat:not(.me-seat) .player-badges {
+    display: none !important;
+  }
+
+  /* FIX 1: hero seat — horizontal compact layout, not tall */
+  .me-seat { width: 100px; }
+  .me-seat .player-card {
+    padding: 5px 6px;
+    border-radius: 10px;
+    background: rgba(5,18,12,0.94);
+    border-color: rgba(201,168,76,0.35);
+    /* shrink height by making layout horizontal */
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 6px;
+    text-align: left;
+  }
+  /* cards on the left */
+  .me-seat .player-cards {
+    grid-column: 1; grid-row: 1 / 3;
+    flex-direction: column; gap: 2px; margin-top: 0;
+    justify-content: center; align-items: center;
+  }
+  /* name/chip row on the right */
+  .me-seat .player-name-row { grid-column: 2; grid-row: 1; justify-content: flex-start; }
+  .me-seat .player-chip-row { grid-column: 2; grid-row: 2; justify-content: flex-start; margin-top: 2px; }
+  /* badges inline under chip row — take full width */
+  .me-seat .player-badges {
+    grid-column: 1 / 3; grid-row: 3;
+    justify-content: center; margin-top: 3px; min-height: 0;
+  }
+  /* hide verbose extras on hero to save height */
+  .me-seat .player-extra,
+  .me-seat .player-delta,
+  .me-seat .player-last-action { display: none; }
+  .me-seat.current-turn .player-last-action { display: none; }
+
+  .me-seat .player-name { font-size: 9px; font-weight: 800; }
+  .me-seat .player-chip-pill { font-size: 8px; padding: 2px 6px; }
+  .badge { font-size: 7px; padding: 1px 4px; }
+
+  /* cards inside hero */
+  .me-seat .player-seat .small-card,
+  .me-seat .player-seat .hidden-card,
+  .player-seat .small-card,
+  .player-seat .hidden-card { width: 20px; height: 28px; border-radius: 4px; font-size: 8px; }
+
+  /* hide non-essential info on non-hero seats */
   .player-seat:not(.me-seat):not(.cards-visible) .player-cards,
   .player-seat:not(.me-seat):not(.cards-visible) .player-extra,
   .player-seat:not(.me-seat) .player-delta { display: none; }
-  .me-seat { width: 86px; }
-  .me-seat .player-card { background: rgba(5,18,12,0.94); border-color: rgba(201,168,76,0.3); }
-  .me-seat .player-name { font-size: 8px; }
-  .opponent-avatar-img { width: 42px; height: 42px; }
-  .opponent-avatar-name { font-size: 7px; }
-  .opponent-avatar-chips { font-size: 6px; }
-  .player-seat .small-card,
-  .player-seat .hidden-card { width: 22px; height: 30px; border-radius: 4px; font-size: 8px; }
-  .player-last-action { font-size: 7px; min-height: 12px; padding: 1px 4px; }
+  .player-seat:not(.me-seat) .player-last-action {
+    font-size: 7px; min-height: 10px; padding: 1px 4px; margin-top: 2px;
+  }
   .player-extra, .player-delta { font-size: 7px; }
-  .control-card { margin-top: 5px; padding: 8px; border-radius: 14px; }
+
+  /* FIX 2: control card — fixed height, never overlaps table */
+  .control-card {
+    margin-top: 4px; padding: 6px 8px;
+    border-radius: 12px; flex-shrink: 0;
+  }
   .control-title { display: none; }
-  .actions { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 5px; margin-top: 5px; }
-  .actions button { min-height: 38px; padding: 7px 4px; border-radius: 10px; font-size: 11px; }
-  .raise-popover { width: min(430px, calc(100vw - 16px)); padding: 10px; }
+  .actions {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 4px; margin-top: 0;
+  }
+  .actions button {
+    min-height: 36px; padding: 6px 4px;
+    border-radius: 10px; font-size: 11px; font-weight: 800;
+    box-shadow: none;
+  }
+
+  /* raise popover */
+  .raise-popover { width: min(420px, calc(100vw - 16px)); padding: 10px; }
   .raise-popover-actions { grid-template-columns: 1fr 1fr 34px 34px minmax(54px,auto); gap: 5px; }
   .raise-popover-actions button { min-height: 30px; font-size: 10px; }
 
