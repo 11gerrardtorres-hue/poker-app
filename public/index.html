@@ -4,42 +4,55 @@
   <meta charset="UTF-8">
   <title>동건 홀덤</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app-shell">
+
+    <!-- ── TOPBAR ── -->
     <header class="topbar">
       <div class="brand">
-        <div class="brand-title">동건 홀덤</div>
-        <div class="brand-subtitle">Welcome to Daniel's Texas Hold'em</div>
+        <div class="brand-title">동건<span class="brand-accent">홀덤</span></div>
+        <div class="brand-subtitle">Daniel's Texas Hold'em</div>
       </div>
-
       <div class="status-row">
         <div id="blindBox" class="status-chip">블라인드: 100 / 200</div>
-        <div id="roomInfoBox" class="status-chip">방: -</div>
+        <div id="roomInfoBox" class="status-chip status-chip--room">방: -</div>
       </div>
     </header>
 
+    <!-- ── ROOM ENTRY ── -->
     <section class="room-panel room-entry-panel">
       <input id="name" placeholder="이름 입력">
-      <input id="roomCodeInput" placeholder="방 코드 입력">
-      <button id="createRoomBtn">방 만들기</button>
-      <button id="joinRoomBtn">방 입장</button>
-      <button id="leaveRoomBtn">방 나가기</button>
+      <input id="roomCodeInput" placeholder="방 코드">
+      <button id="createRoomBtn" class="btn-create">방 만들기</button>
+      <button id="joinRoomBtn" class="btn-join">입장</button>
+      <button id="leaveRoomBtn" class="btn-leave">나가기</button>
     </section>
 
-    <section class="room-panel" id="settingsPanel">
-      <input id="smallBlindInput" type="number" min="1" step="1" placeholder="SB">
-      <input id="bigBlindInput" type="number" min="1" step="1" placeholder="BB">
-      <button id="applySettingsBtn">설정 적용</button>
+    <!-- ── SETTINGS ── -->
+    <section class="room-panel settings-panel" id="settingsPanel">
+      <label class="settings-label">SB <input id="smallBlindInput" type="number" min="1" step="1" placeholder="100"></label>
+      <label class="settings-label">BB <input id="bigBlindInput"   type="number" min="1" step="1" placeholder="200"></label>
+      <button id="applySettingsBtn" class="btn-apply">적용</button>
     </section>
 
+    <!-- ── PLAYER CHIP SETTINGS ── -->
     <section id="playerChipSettings" class="player-chip-settings hidden"></section>
 
+    <!-- ── MAIN ── -->
     <main class="main-layout">
       <section class="table-section">
+
+        <!-- FELT TABLE -->
         <div class="table-card">
           <div class="poker-table">
+
+            <!-- rail decoration -->
+            <div class="table-rail-inner"></div>
+
             <div id="playersLayer" class="players-layer"></div>
 
             <div class="table-center">
@@ -47,9 +60,8 @@
                 <div class="pot-pill-label">POT</div>
                 <div id="potCenterValue" class="pot-pill-value">0</div>
               </div>
-
               <div class="community-block">
-                <div class="community-title">공용 카드</div>
+                <div class="community-title">Community Cards</div>
                 <div class="community-cards">
                   <div class="card-slot"></div>
                   <div class="card-slot"></div>
@@ -58,47 +70,50 @@
                   <div class="card-slot"></div>
                 </div>
               </div>
-
               <div id="resultBox" class="result-box"></div>
             </div>
+
           </div>
         </div>
 
+        <!-- ACTION CONTROLS -->
         <section class="control-card">
-          <div class="control-title">베팅</div>
+          <div class="control-title">Action</div>
 
           <div id="raisePopup" class="bet-box raise-popover hidden">
             <input id="raiseAmount" type="range" min="200" max="10000" step="100" value="200">
             <div class="raise-popover-actions">
               <button id="confirmRaiseBtn" class="action-primary">확인</button>
-              <button id="cancelRaiseBtn" class="action-secondary">취소</button>
-              <button id="decreaseRaiseBtn" class="raise-step-button" aria-label="레이즈 100 감소">-</button>
+              <button id="cancelRaiseBtn"  class="action-secondary">취소</button>
+              <button id="decreaseRaiseBtn" class="raise-step-button" aria-label="레이즈 100 감소">−</button>
               <button id="increaseRaiseBtn" class="raise-step-button" aria-label="레이즈 100 증가">+</button>
               <div id="raiseAmountText" class="bet-value">200</div>
             </div>
           </div>
 
           <div class="actions">
-            <button id="startBtn" class="action-secondary">게임 시작</button>
-            <button id="foldBtn" class="action-danger">Fold</button>
-            <button id="callBtn" class="action-primary">Call</button>
-            <button id="raiseBtn" class="action-primary">Raise</button>
-            <button id="allInBtn" class="action-accent">All-in</button>
+            <button id="startBtn"    class="action-secondary">시작</button>
+            <button id="foldBtn"     class="action-danger">Fold</button>
+            <button id="callBtn"     class="action-primary">Call</button>
+            <button id="raiseBtn"    class="action-gold">Raise</button>
+            <button id="allInBtn"    class="action-accent">All-in</button>
             <button id="showdownBtn" class="action-secondary">다음 게임</button>
           </div>
         </section>
+
       </section>
     </main>
   </div>
 
+  <!-- ── REVEAL MODAL ── -->
   <div id="revealDecisionModal" class="reveal-modal hidden">
     <div class="reveal-modal-backdrop"></div>
     <div class="reveal-modal-panel">
-      <div id="revealDecisionTitle" class="reveal-modal-title">쇼다운</div>
+      <div id="revealDecisionTitle"   class="reveal-modal-title">쇼다운</div>
       <div id="revealDecisionMessage" class="reveal-modal-message"></div>
       <div id="revealDecisionButtons" class="reveal-modal-actions">
         <button id="revealHandBtn" class="reveal-primary">핸드 공개</button>
-        <button id="hideHandBtn" class="reveal-secondary">핸드 숨김</button>
+        <button id="hideHandBtn"   class="reveal-secondary">핸드 숨김</button>
       </div>
       <div id="revealDecisionWaiting" class="reveal-waiting hidden"></div>
     </div>
