@@ -412,16 +412,22 @@ function getOpponentAvatarSrc(player, state, winnerNames) {
   return winnerNames.includes(player.name) ? OPPONENT_AVATAR_WIN : OPPONENT_AVATAR_LOSE;
 }
 
+// ★ 변경: 현재 스트리트(=마지막 actionLog 그룹)의 액션만 반환
+//          → 프리플랍 → 플랍 → 턴 → 리버 넘어갈 때마다 새 그룹이 시작되므로
+//             자동으로 모든 배지가 사라지고, 다시 행동하면 표시됨.
+//          → 블라인드 액션(SB/BB)은 포지션 뱃지와 중복이므로 제외.
 function getLatestPlayerActions(actionLogs) {
   const map = new Map();
-  if (!actionLogs) return map;
+  if (!actionLogs || actionLogs.length === 0) return map;
 
-  actionLogs.forEach(group => {
-    group.entries.forEach(entry => {
-      const parsed = parseLogEntry(entry);
-      if (!parsed.name) return;
-      map.set(parsed.name, entry);
-    });
+  const lastGroup = actionLogs[actionLogs.length - 1];
+  if (!lastGroup || !lastGroup.entries) return map;
+
+  lastGroup.entries.forEach(entry => {
+    const parsed = parseLogEntry(entry);
+    if (!parsed.name) return;
+    if (parsed.type === "blind") return; // 블라인드는 포지션 배지와 중복
+    map.set(parsed.name, entry);
   });
 
   return map;
@@ -517,6 +523,7 @@ function renderState(state) {
       : "";
 
     if (!p.isMe) {
+      // ── 상대 플레이어: 아바타 → 이름 → 칩 → 포지션 → 액션 배지 ──
       const opponentAvatarSrc = getOpponentAvatarSrc(p, state, winnerNames);
       const opponentCardsHtml = p.cardsVisible
         ? `
@@ -534,8 +541,10 @@ function renderState(state) {
             <div class="opponent-avatar-name">${p.name}</div>
             <div class="opponent-avatar-chips">${formatNumber(p.chips)}</div>
           </div>
-          <div class="player-badges">${positionBadge}</div>
           ${opponentCardsHtml}
+        </div>
+        <div class="player-meta">
+          <div class="player-badges">${positionBadge}</div>
           ${lastActionHtml}
         </div>
       `;
@@ -544,23 +553,25 @@ function renderState(state) {
       return;
     }
 
+    // ── 나(me-seat): 박스 안 = 이름 + 핸드(가로) + 칩, 박스 밖 = 포지션 + 액션 ──
     wrap.innerHTML = `
       <div class="player-card">
         <div class="player-name-row">
           <div class="player-name">${p.name}${p.isMe ? " (나)" : ""}</div>
         </div>
 
-        <div class="player-chip-row">
-          <span class="player-chip-pill">칩 ${formatNumber(p.chips)}</span>
-        </div>
-
-        <div class="player-badges">${positionBadge}</div>
-
         <div class="player-cards">
           <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[0], p.cardsVisible)}</div>
           <div class="${p.cardsVisible ? "small-card" : "hidden-card"}">${formatCardHtml(p.cards[1], p.cardsVisible)}</div>
         </div>
 
+        <div class="player-chip-row">
+          <span class="player-chip-pill">${formatNumber(p.chips)}</span>
+        </div>
+      </div>
+
+      <div class="player-meta">
+        <div class="player-badges">${positionBadge}</div>
         ${lastActionHtml}
         <div class="player-extra">${roundBetInfo}</div>
         <div class="player-extra">${handInfo}</div>
