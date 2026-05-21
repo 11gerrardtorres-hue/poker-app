@@ -546,6 +546,7 @@ function renderState(state) {
         <div class="player-meta">
           <div class="player-badges">${positionBadge}</div>
           ${lastActionHtml}
+          ${seatChipChange ? `<div class="player-delta" style="color:${chipColor};">${seatChipChange}</div>` : ""}
         </div>
       `;
 
