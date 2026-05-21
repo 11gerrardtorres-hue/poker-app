@@ -907,8 +907,7 @@ button, input { font: inherit; }
   }
 
   /* hide verbose info on opponent meta */
-  .player-seat:not(.me-seat) .player-extra,
-  .player-seat:not(.me-seat) .player-delta { display: none; }
+  .player-seat:not(.me-seat) .player-extra { display: none; }
 
   /* ── ME: 박스 안 = 이름 / 핸드(가로) / 칩 ── */
   .me-seat { width: 84px; }
