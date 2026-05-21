@@ -120,9 +120,9 @@ function getSeatPositions(count) {
     const startAngle = 200;
     const endAngle = 340;
     const centerX = 50;
-    const centerY = 50;
-    const radiusX = 42;
-    const radiusY = 40;
+    const centerY = 54;
+    const radiusX = 40;
+    const radiusY = 32;
 
     for (let i = 0; i < opponentCount; i += 1) {
       const ratio = opponentCount === 1 ? 0.5 : i / (opponentCount - 1);
@@ -573,7 +573,6 @@ function renderState(state) {
       <div class="player-meta">
         <div class="player-badges">${positionBadge}</div>
         ${lastActionHtml}
-        <div class="player-extra">${roundBetInfo}</div>
         <div class="player-extra">${handInfo}</div>
         <div class="player-extra">${potWinInfo}</div>
         <div class="player-delta" style="color:${chipColor};">
